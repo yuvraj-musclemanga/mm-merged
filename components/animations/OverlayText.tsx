@@ -9,7 +9,7 @@ import {
 } from "framer-motion";
 
 /**
- * Cinematic overlay UI for the HeroScroll canvas animation.
+ * Cinematic overlay UI for the HeroScroll canvas animations.
  * Ported from mm-v2. Shows product headings + glassmorphism feature cards
  * that slide in once the canvas spin animation begins (progress >= 0.25).
  *
