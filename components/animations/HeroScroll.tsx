@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useScroll, useTransform, useMotionValueEvent } from "framer-motion";
 import { useImagePreloader } from "@/hooks/useImagePreloader";
 import OverlayText from "./OverlayText";
@@ -59,6 +59,39 @@ export default function HeroScroll({
   // Without this, useScroll tracks the window which no longer scrolls.
   const scrollContainerRef = useScrollContainer();
 
+  // ── Lazy-load gate ───────────────────────────────────────────────────────
+  // Don't load any images until this section is near the viewport.
+  // This is the primary guard against OOM crashes on mobile: loading all
+  // 288 frames at page startup was blowing past mobile Safari's ~1.5GB limit.
+  const [shouldLoad, setShouldLoad] = useState(false);
+
+  useEffect(() => {
+    if (shouldLoad) return; // already triggered, no need to observe
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldLoad(true);
+          observer.disconnect();
+        }
+      },
+      {
+        // Use the scroll container as the root so intersection is detected
+        // relative to the content div's visible area, not the full window.
+        root: scrollContainerRef?.current ?? null,
+        // Start loading when the section is within 100% of the container
+        // height above/below the visible area — gives enough lead time.
+        rootMargin: '100% 0px 100% 0px',
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [shouldLoad, scrollContainerRef]);
+  // ─────────────────────────────────────────────────────────────────────────
+
   const framePath = useCallback(
     (index: number) => {
       const actualFrameNumber = (index - 1) * frameStep;
@@ -74,7 +107,7 @@ export default function HeroScroll({
     [folderPath, framePrefix, frameStep, frameExtension, padNumber]
   );
 
-  const { images, loaded } = useImagePreloader(totalFrames, framePath);
+  const { images, loaded } = useImagePreloader(totalFrames, framePath, shouldLoad);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -102,8 +135,10 @@ export default function HeroScroll({
 
       const currentImg = images[index];
 
-      // Handle high-DPI displays for crisp rendering
-      const dpr = window.devicePixelRatio || 1;
+      // Handle high-DPI displays — cap at 1.5x to reduce canvas memory usage.
+      // Mobile devices often report DPR=3, making the canvas 9× larger than
+      // desktop in memory. Capping at 1.5 keeps it sharp while preventing OOM.
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       const rect = canvas.getBoundingClientRect();
 
       // Set actual memory size scaled by pixel density
