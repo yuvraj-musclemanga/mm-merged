@@ -68,10 +68,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         return () => ro.disconnect();
     }, []);
 
-    // Lenis smooth-scroll initialised in wrapper-mode on the content div.
-    // We intentionally keep wrapper mode so sticky elements inside the scroll
-    // container work correctly (sticky: top:0 snaps to the div, not the page).
-    // For iOS touch compatibility we must set `eventsTarget` to the wrapper.
+    // Lenis smooth-scroll — wired to the content div (wrapper mode)
     useEffect(() => {
         const wrapper = scrollContainerRef.current;
         if (!wrapper) return;
@@ -85,9 +82,6 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             orientation: 'vertical',
             gestureOrientation: 'vertical',
             smoothWheel: true,
-            // iOS Safari: touch events must be heard on the wrapper itself,
-            // not on window, because the body is overflow:hidden.
-            eventsTarget: wrapper,
             wheelMultiplier: 1,
             touchMultiplier: 2,
         });
@@ -124,17 +118,15 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
                 {/* ── DIV 2: Scrollable content area ─────────────────────── */}
                 {/*
-                 * overflow-y-auto here so iOS Safari receives native touch
-                 * events on the wrapper div. Lenis takes over from there.
-                 * overflow-x-hidden prevents horizontal bounce.
+                 * overflow-hidden here because Lenis (in wrapper mode) manages
+                 * the visual scrolling via CSS transform on its content child.
                  * The no-scrollbar utility hides the native scrollbar.
                  * sticky elements inside this div naturally stick to its top,
                  * which is already below the navbar — headings are fully visible.
                  */}
                 <div
                     ref={scrollContainerRef}
-                    className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar"
-                    style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+                    className="flex-1 overflow-hidden no-scrollbar"
                 >
                     {/* Lenis content target — must be direct child of wrapper */}
                     <div>
