@@ -60,12 +60,12 @@ export default function HeroScroll({
   const scrollContainerRef = useScrollContainer();
 
   // Load only every third image to decrease network/memory usage
-  const loadedFramesCount = Math.ceil(totalFrames / 3);
+  const loadedFramesCount = Math.ceil(totalFrames / 4);
 
   const framePath = useCallback(
     (index: number) => {
       // Map 1-based index (1, 2, 3...) to every third frame index (1, 4, 7...)
-      const originalIndex = (index - 1) * 3 + 1;
+      const originalIndex = (index - 1) * 4 + 1;
       const actualFrameNumber = (originalIndex - 1) * frameStep;
       const finalNumber = frameStep === 1 ? originalIndex : actualFrameNumber;
 
@@ -108,8 +108,7 @@ export default function HeroScroll({
       const currentImg = images[index];
 
       // Handle high-DPI displays for crisp rendering
-      const dpr = 1;
-      // const dpr = window.devicePixelRatio || 1;
+      const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
 
       // Set actual memory size scaled by pixel density
