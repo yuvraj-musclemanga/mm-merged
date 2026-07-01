@@ -82,6 +82,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             orientation: 'vertical',
             gestureOrientation: 'vertical',
             smoothWheel: true,
+            syncTouch: true, // Enables touch scrolling in wrapper mode
             wheelMultiplier: 1,
             touchMultiplier: 2,
         });
