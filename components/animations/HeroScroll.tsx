@@ -59,12 +59,12 @@ export default function HeroScroll({
   // Without this, useScroll tracks the window which no longer scrolls.
   const scrollContainerRef = useScrollContainer();
 
-  // Load only every third image to decrease network/memory usage
+  // Load only every sixth image to decrease network/memory usage
   const loadedFramesCount = Math.ceil(totalFrames / 6);
 
   const framePath = useCallback(
     (index: number) => {
-      // Map 1-based index (1, 2, 3...) to every third frame index (1, 4, 7...)
+      // Map 1-based index (1, 2, 3...) to every sixth frame index (1, 7, 13...)
       const originalIndex = (index - 1) * 6 + 1;
       const actualFrameNumber = (originalIndex - 1) * frameStep;
       const finalNumber = frameStep === 1 ? originalIndex : actualFrameNumber;
