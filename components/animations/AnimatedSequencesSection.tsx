@@ -35,7 +35,7 @@ export default function AnimatedSequencesSection() {
   return (
     <div className="relative bg-background-dark">
       {/* SEQUENCE 1 — The Essential Tee (tatakae / Humanity's Strongest) */}
-      <div className="relative z-10 w-full" style={{ marginBottom: "calc(-1 * var(--scroll-content-height, 100vh))" }}>
+      {/* <div className="relative z-10 w-full" style={{ marginBottom: "calc(-1 * var(--scroll-content-height, 100vh))" }}>
         <HeroScroll
           totalFrames={108}
           folderPath="/sequence"
@@ -49,7 +49,7 @@ export default function AnimatedSequencesSection() {
           rightHeading={<>SUPERIOR PRINT QUALITY</>}
           bottomHeading="LUXURY IN EVERY FIBER"
         />
-      </div>
+      </div> */}
 
       {/* SEQUENCE 2 — The Goku Edition */}
       {/* <div className="relative z-20 w-full" style={{ marginBottom: "calc(-1 * var(--scroll-content-height, 100vh))" }}>
