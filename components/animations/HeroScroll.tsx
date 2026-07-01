@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useScroll, useTransform, useMotionValueEvent } from "framer-motion";
 import { useImagePreloader } from "@/hooks/useImagePreloader";
 import OverlayText from "./OverlayText";
@@ -107,8 +107,10 @@ export default function HeroScroll({
 
       const currentImg = images[index];
 
-      // Handle high-DPI displays for crisp rendering
-      const dpr = window.devicePixelRatio || 1;
+      // Handle high-DPI displays — cap at 1.5x to reduce canvas memory usage.
+      // Mobile devices often report DPR=3, making the canvas 9× larger than
+      // desktop in memory. Capping at 1.5 keeps it sharp while preventing OOM.
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       const rect = canvas.getBoundingClientRect();
 
       // Set actual memory size scaled by pixel density
