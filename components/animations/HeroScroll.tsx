@@ -103,7 +103,7 @@ export default function HeroScroll({
       const currentImg = images[index];
 
       // Handle high-DPI displays for crisp rendering
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = 1;
       const rect = canvas.getBoundingClientRect();
 
       // Set actual memory size scaled by pixel density
