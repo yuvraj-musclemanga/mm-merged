@@ -60,12 +60,12 @@ export default function HeroScroll({
   const scrollContainerRef = useScrollContainer();
 
   // Load only every third image to decrease network/memory usage
-  const loadedFramesCount = Math.ceil(totalFrames / 4);
+  const loadedFramesCount = Math.ceil(totalFrames / 6);
 
   const framePath = useCallback(
     (index: number) => {
       // Map 1-based index (1, 2, 3...) to every third frame index (1, 4, 7...)
-      const originalIndex = (index - 1) * 4 + 1;
+      const originalIndex = (index - 1) * 6 + 1;
       const actualFrameNumber = (originalIndex - 1) * frameStep;
       const finalNumber = frameStep === 1 ? originalIndex : actualFrameNumber;
 
