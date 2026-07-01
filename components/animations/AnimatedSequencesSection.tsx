@@ -35,7 +35,7 @@ export default function AnimatedSequencesSection() {
   return (
     <div className="relative bg-background-dark">
       {/* SEQUENCE 1 — The Essential Tee (tatakae / Humanity's Strongest) */}
-      {/* <div className="relative z-10 w-full" style={{ marginBottom: "calc(-1 * var(--scroll-content-height, 100vh))" }}>
+      <div className="relative z-10 w-full" style={{ marginBottom: "calc(-1 * var(--scroll-content-height, 100vh))" }}>
         <HeroScroll
           totalFrames={108}
           folderPath="/sequence"
@@ -49,10 +49,10 @@ export default function AnimatedSequencesSection() {
           rightHeading={<>SUPERIOR PRINT QUALITY</>}
           bottomHeading="LUXURY IN EVERY FIBER"
         />
-      </div> */}
+      </div>
 
       {/* SEQUENCE 2 — The Goku Edition */}
-      {/* <div className="relative z-20 w-full" style={{ marginBottom: "calc(-1 * var(--scroll-content-height, 100vh))" }}>
+      <div className="relative z-20 w-full" style={{ marginBottom: "calc(-1 * var(--scroll-content-height, 100vh))" }}>
         <HeroScroll
           totalFrames={97}
           folderPath="/sequence2"
@@ -66,10 +66,10 @@ export default function AnimatedSequencesSection() {
           rightHeading={<>SKIN FRIENDLY SOFT TOUCH FABRIC</>}
           bottomHeading="ELEVATED COMFORT"
         />
-      </div> */}
+      </div>
 
       {/* SEQUENCE 3 — The Zenitsu Edition (Thunder Breathing) */}
-      {/* <div className="relative z-30 w-full" style={{ marginBottom: "calc(-1 * var(--scroll-content-height, 100vh))" }}>
+      <div className="relative z-30 w-full" style={{ marginBottom: "calc(-1 * var(--scroll-content-height, 100vh))" }}>
         <HeroScroll
           totalFrames={83}
           folderPath="/sequence3"
@@ -84,7 +84,7 @@ export default function AnimatedSequencesSection() {
           rightHeading={<>LIMITED DROPS ONLY</>}
           bottomHeading="LIMITLESS POSSIBILITIES"
         />
-      </div> */}
+      </div>
 
       {/* Flow-restoration spacer:
           The three sections above have a combined negative margin.
