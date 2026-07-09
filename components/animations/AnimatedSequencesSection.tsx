@@ -49,7 +49,7 @@ export default function AnimatedSequencesSection() {
         <div
           key={i}
           className="relative w-full snap-start snap-always overflow-hidden uppercase"
-          style={{ height: "var(--scroll-content-height, 100svh)" }}
+          style={{ height: "100svh" }}
         >
           {/* ── Static background image (replaces canvas sequence) ──────── */}
           <Image

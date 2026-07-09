@@ -21,7 +21,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartOpen, onMobileMenuOpen, on
     }, []);
 
     return (
-        <header className="relative z-50 bg-black/95 backdrop-blur-sm border-b border-white/10 px-6 lg:px-12 py-6 shrink-0">
+        <header className="sticky top-0 z-50 bg-black/95 backdrop-blur-sm border-b border-white/10 px-6 lg:px-12 py-6 shrink-0">
             <nav className="relative max-w-[1600px] mx-auto flex items-center justify-between h-10">
                 {/* Mobile Hamburger - Hidden on lg */}
                 <div className="flex items-center lg:hidden">
