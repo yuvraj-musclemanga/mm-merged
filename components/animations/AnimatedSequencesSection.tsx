@@ -27,7 +27,7 @@ const SEQUENCES = [
   {
     image: "/pictures/goku.jpg",
     alt: "The Spirit of Goku — Goku Edition Tee",
-    topHeading: "THE SPIRIT OF GOKU",
+    topHeading: "SPIRIT OF GOKU",
     leftCard: "PREMIUM EMBROIDERY WORK",
     rightCard: "SKIN FRIENDLY SOFT TOUCH FABRIC",
     bottomCard: "ELEVATED COMFORT",
@@ -39,6 +39,14 @@ const SEQUENCES = [
     leftCard: "ORIGINAL EXCLUSIVE DESIGNS",
     rightCard: "LIMITED DROPS ONLY",
     bottomCard: "LIMITLESS POSSIBILITIES",
+  },
+  {
+    image: "/pictures/skinny_bitch1.jpg",
+    alt: "Don't be a Skinny Bitch",
+    topHeading: "SKINNY BITCH",
+    leftCard: "PREMIUM PUFF PRINT",
+    rightCard: "BOXY FIT OVERSIZED",
+    bottomCard: "BOLD DEMEANOUR",
   },
 ] as const;
 
