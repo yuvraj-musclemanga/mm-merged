@@ -1,111 +1,184 @@
-"use client";
-
 /**
  * AnimatedSequencesSection
  *
- * Client-side wrapper that brings the three cinematic HeroScroll sequences
- * from mm-v2 into mm-merged's Home page.
+ * Three full-screen sections, each with a static image from /public/pictures/
+ * and the exact same overlay UI that was previously animated by OverlayText:
+ *  - Widescreen (≥ 4:3): Heading + "VIEW PRODUCT" on the left, 3 glassmorphism
+ *    feature cards stacked on the right.
+ *  - Portrait / mobile (< 4:3): Heading + "VIEW PRODUCT" centred at the top,
+ *    3 feature cards in a horizontal row at the bottom.
  *
- * WHY A SEPARATE CLIENT COMPONENT?
- * - mm-merged's app/page.tsx is an async server component (it fetches from
- *   Supabase at build/request time).
- * - HeroScroll is "use client" and uses browser-only APIs (canvas, scroll
- *   events, window.devicePixelRatio).
- * - Next.js requires that client components be imported from within another
- *   client component (or via dynamic import with ssr:false). Wrapping them
- *   here lets the server page import this single boundary component cleanly.
- *
- * STICKY-STACK / OVERLAP SCROLL EFFECT
- * - Each HeroScroll occupies 400vh of scroll space internally (sticky top-0
- *   h-screen inner div).
- * - The `marginBottom: "-100vh"` on each wrapper div pulls the next section
- *   up by one viewport height, creating the "stacks over previous" overlap
- *   effect as the user scrolls into it.
- * - z-index increments (z-10 → z-20 → z-30) so each section correctly
- *   renders on top of the previous one during the overlap phase.
- * - A final transparent spacer (100vh) re-establishes normal document flow
- *   so the subsequent mm sections (Collection, Marquee, Story) appear below
- *   without being consumed by the negative-margin trick.
+ * Animations removed — all overlay content is always visible (opacity:1).
+ * The canvas image-sequence, framer-motion, and device-detection hooks are
+ * gone; this is now a plain server component.
  */
 
-import HeroScroll from "@/components/animations/HeroScroll";
-import { H1, H2, Label } from '@/components/ui/Typography';
+import Image from "next/image";
+
+const SEQUENCES = [
+  {
+    image: "/pictures/tatakae.jpg",
+    alt: "Humanity's Strongest — Tatakae Tee",
+    topHeading: "HUMANITY'S STRONGEST",
+    leftCard: "240 GSM FRENCH TERRY COTTON FABRIC",
+    rightCard: "SUPERIOR PRINT QUALITY",
+    bottomCard: "LUXURY IN EVERY FIBER",
+  },
+  {
+    image: "/pictures/goku.jpg",
+    alt: "The Spirit of Goku — Goku Edition Tee",
+    topHeading: "THE SPIRIT OF GOKU",
+    leftCard: "PREMIUM EMBROIDERY WORK",
+    rightCard: "SKIN FRIENDLY SOFT TOUCH FABRIC",
+    bottomCard: "ELEVATED COMFORT",
+  },
+  {
+    image: "/pictures/zenitsu.jpg",
+    alt: "Thunder Breathing — Zenitsu Edition Tee",
+    topHeading: "THUNDER BREATHING",
+    leftCard: "ORIGINAL EXCLUSIVE DESIGNS",
+    rightCard: "LIMITED DROPS ONLY",
+    bottomCard: "LIMITLESS POSSIBILITIES",
+  },
+] as const;
 
 export default function AnimatedSequencesSection() {
   return (
     <div className="relative bg-background-dark">
-      {/* SEQUENCE 1 — The Essential Tee (tatakae / Humanity's Strongest) */}
-      <div className="relative z-10 w-full" style={{ marginBottom: "calc(-1 * var(--scroll-content-height, 100vh))" }}>
-        <HeroScroll
-          totalFrames={108}
-          folderPath="/sequence"
-          framePrefix="tatakae_"
-          frameStep={1}
-          padNumber={3}
-          frameExtension=".jpg"
-          objectFit="cover"
-          topHeading="HUMANITY'S STRONGEST"
-          leftHeading={<>240 GSM FRENCH TERRY COTTON FABRIC</>}
-          rightHeading={<>SUPERIOR PRINT QUALITY</>}
-          bottomHeading="LUXURY IN EVERY FIBER"
-        />
-      </div>
+      {SEQUENCES.map((seq, i) => (
+        <div
+          key={i}
+          className="relative w-full snap-start snap-always overflow-hidden uppercase"
+          style={{ height: "var(--scroll-content-height, 100svh)" }}
+        >
+          {/* ── Static background image (replaces canvas sequence) ──────── */}
+          <Image
+            src={seq.image}
+            alt={seq.alt}
+            fill
+            sizes="100vw"
+            className="object-cover object-center"
+            priority={i === 0}
+          />
 
-      {/* SEQUENCE 2 — The Goku Edition */}
-      <div className="relative z-20 w-full" style={{ marginBottom: "calc(-1 * var(--scroll-content-height, 100vh))" }}>
-        <HeroScroll
-          totalFrames={97}
-          folderPath="/sequence2"
-          framePrefix="goku_"
-          frameStep={1}
-          padNumber={3}
-          frameExtension=".jpg"
-          objectFit="cover"
-          topHeading="THE SPIRIT OF GOKU"
-          leftHeading={<>PREMIUM EMBROIDERY WORK</>}
-          rightHeading={<>SKIN FRIENDLY SOFT TOUCH FABRIC</>}
-          bottomHeading="ELEVATED COMFORT"
-        />
-      </div>
+          {/* Top + bottom gradient blends — matches original OverlayText */}
+          <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-background-dark to-transparent z-10 pointer-events-none" />
+          <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-background-dark to-transparent z-10 pointer-events-none" />
 
-      {/* SEQUENCE 3 — The Zenitsu Edition (Thunder Breathing) */}
-      <div className="relative z-30 w-full" style={{ marginBottom: "calc(-1 * var(--scroll-content-height, 100vh))" }}>
-        <HeroScroll
-          totalFrames={83}
-          folderPath="/sequence3"
-          framePrefix="zenitsu_"
-          frameStep={1}
-          padNumber={3}
-          frameExtension=".jpg"
-          reverse={false}
-          objectFit="cover"
-          topHeading="THUNDER BREATHING"
-          leftHeading={<>ORIGINAL EXCLUSIVE DESIGNS</>}
-          rightHeading={<>LIMITED DROPS ONLY</>}
-          bottomHeading="LIMITLESS POSSIBILITIES"
-        />
-      </div>
+          {/* ═══════════════════════════════════════════════════════════════
+              WIDESCREEN LAYOUT (≥ 4:3 aspect ratio) — left heading + right cards
+              ═══════════════════════════════════════════════════════════════ */}
+          <div className="hidden [@media(min-aspect-ratio:4/3)]:block">
+            {/* LEFT — Heading & Button */}
+            <div className="absolute inset-y-0 left-0 p-8 md:pl-16 lg:pl-24 flex flex-col items-start justify-center w-full md:w-5/12 z-20">
+              <h2
+                className="text-4xl lg:text-6xl text-white tracking-wide text-left drop-shadow-2xl font-bold leading-tight mb-4"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                {seq.topHeading}
+              </h2>
+              <p className="text-white/60 tracking-widest text-sm md:text-base font-medium mb-8">
+                UNISEX OVERSIZED TEE
+              </p>
+              <button className="px-8 py-3.5 bg-white/5 hover:bg-white text-white hover:text-black border border-white/20 hover:border-white transition-all duration-300 rounded-full tracking-widest text-xs lg:text-sm font-semibold backdrop-blur-md shadow-lg hover:shadow-white/20 cursor-pointer pointer-events-auto">
+                VIEW PRODUCT
+              </button>
+            </div>
 
-      {/* Flow-restoration spacer:
-          The three sections above have a combined negative margin.
-          This spacer adds back enough space so the document flow
-          beneath this component starts at the correct scroll position
-          (after all three stacks have fully played). */}
-      <div className="relative z-40 w-full bg-background-dark" style={{ minHeight: "var(--scroll-content-height, 100vh)" }}>
-        <section className="max-w-[1600px] mx-auto py-32 px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center z-40">
+            {/* RIGHT — Feature Cards */}
+            <div className="absolute inset-y-0 right-0 p-8 md:pr-16 lg:pr-24 flex flex-col items-end justify-center gap-5 w-full md:w-1/3 z-20">
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-2xl w-full max-w-[280px]">
+                <p className="text-sm lg:text-base text-white tracking-wider font-light leading-snug text-center">
+                  {seq.leftCard}
+                </p>
+              </div>
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-2xl w-full max-w-[280px]">
+                <p className="text-sm lg:text-base text-white tracking-wider font-light leading-snug text-center">
+                  {seq.rightCard}
+                </p>
+              </div>
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-2xl w-full max-w-[280px]">
+                <p className="text-sm lg:text-base text-white tracking-wider font-light leading-snug text-center">
+                  {seq.bottomCard}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* ═══════════════════════════════════════════════════════════════
+              PORTRAIT / SQUARE LAYOUT (< 4:3) — top heading + bottom cards
+              ═══════════════════════════════════════════════════════════════ */}
+          <div className="block [@media(min-aspect-ratio:4/3)]:hidden">
+            {/* TOP — Heading & Button */}
+            <div className="absolute top-8 md:top-12 inset-x-0 p-4 flex flex-col items-center justify-start w-full z-20">
+              <h2
+                className="text-3xl md:text-5xl text-white tracking-wide text-center drop-shadow-2xl font-bold leading-tight mb-4"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                {seq.topHeading}
+              </h2>
+              <button className="px-6 py-2.5 bg-white/5 hover:bg-white text-white hover:text-black border border-white/20 hover:border-white transition-all duration-300 rounded-full tracking-widest text-[10px] md:text-xs font-semibold backdrop-blur-md shadow-lg hover:shadow-white/20 cursor-pointer pointer-events-auto">
+                VIEW PRODUCT
+              </button>
+            </div>
+
+            {/* BOTTOM — Horizontal Feature Cards */}
+            <div className="absolute bottom-8 md:bottom-12 inset-x-0 p-4 flex flex-row items-stretch justify-center gap-2 md:gap-4 w-full z-20">
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-xl flex-1 max-w-[140px] flex items-center justify-center">
+                <p className="text-[9px] md:text-xs text-white tracking-wider font-light leading-snug text-center break-words">
+                  {seq.leftCard}
+                </p>
+              </div>
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-xl flex-1 max-w-[140px] flex items-center justify-center">
+                <p className="text-[9px] md:text-xs text-white tracking-wider font-light leading-snug text-center break-words">
+                  {seq.rightCard}
+                </p>
+              </div>
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-xl flex-1 max-w-[140px] flex items-center justify-center">
+                <p className="text-[9px] md:text-xs text-white tracking-wider font-light leading-snug text-center break-words">
+                  {seq.bottomCard}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {/* ─── Our Story section ─────────────────────────────────────────────── */}
+      <div className="relative z-40 w-full bg-background-dark">
+        <section className="max-w-[1600px] mx-auto py-32 px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
           <div>
-            <Label className="mb-6 block">Our Story</Label>
-            <H2 className="text-4xl md:text-6xl mb-8 leading-tight">Born in the dark, forged in iron.</H2>
+            <p className="mb-6 block text-xs font-black uppercase tracking-[0.3em] text-white/50">
+              Our Story
+            </p>
+            <h2
+              className="text-4xl md:text-6xl mb-8 leading-tight font-bold text-white"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Born in the dark, forged in iron.
+            </h2>
             <p className="text-lg text-white/60 leading-relaxed mb-10 max-w-xl">
-              Musclemanga isn&apos;t just about t-shirts. It&apos;s about the intersection of aesthetics and discipline. Every piece in our &apos;Drop-01&apos; is crafted with heavyweight fabrics and high-contrast designs that reflect the grit of the street and the focus of the gym.
+              Musclemanga isn&apos;t just about t-shirts. It&apos;s about the
+              intersection of aesthetics and discipline. Every piece in our
+              &apos;Drop-01&apos; is crafted with heavyweight fabrics and
+              high-contrast designs that reflect the grit of the street and the
+              focus of the gym.
             </p>
           </div>
           <div className="relative">
             <div className="aspect-square border border-white/10 bg-card-dark overflow-hidden p-8">
-              <div className="w-full h-full bg-cover bg-center grayscale contrast-150" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAdDZVsqBCGQ426VBQD0o9tc9zY9BEEpy7Eu_j3vw7SYd_ilm-e_p8DzXWx17mFu7K4BgRDjXTWs62lEO0Q4P_mYLd7GrViUZkDbbAa5hq-XLVl_Pl09K5CmXztXHeYv5aK_IIQdKYsEdVERWKqj5zsIZTPgLlMISHENl_OstAHdEmrgMtUkj4fPpQqJA4ubtvhiXiGM4qEReKSqrIE4MjlyFgeP1BqXytDvdfQzQzRi8DfvOirPFtGXMV0B748k3f4mLIymE2cZ4DP")' }}></div>
+              <div
+                className="w-full h-full bg-cover bg-center grayscale contrast-150"
+                style={{
+                  backgroundImage:
+                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAdDZVsqBCGQ426VBQD0o9tc9zY9BEEpy7Eu_j3vw7SYd_ilm-e_p8DzXWx17mFu7K4BgRDjXTWs62lEO0Q4P_mYLd7GrViUZkDbbAa5hq-XLVl_Pl09K5CmXztXHeYv5aK_IIQdKYsEdVERWKqj5zsIZTPgLlMISHENl_OstAHdEmrgMtUkj4fPpQqJA4ubtvhiXiGM4qEReKSqrIE4MjlyFgeP1BqXytDvdfQzQzRi8DfvOirPFtGXMV0B748k3f4mLIymE2cZ4DP")',
+                }}
+              />
             </div>
             <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-white text-black p-8 hidden md:flex items-center justify-center text-center">
-              <p className="text-[10px] font-black uppercase leading-tight tracking-widest">Ethically Crafted in India</p>
+              <p className="text-[10px] font-black uppercase leading-tight tracking-widest">
+                Ethically Crafted in India
+              </p>
             </div>
           </div>
         </section>
