@@ -28,14 +28,32 @@
  *   without being consumed by the negative-margin trick.
  */
 
+import { useState, useEffect } from "react";
 import HeroScroll from "@/components/animations/HeroScroll";
 import { H1, H2, Label } from '@/components/ui/Typography';
 
 export default function AnimatedSequencesSection() {
+  const [isDesktop, setIsDesktop] = useState<boolean>(true);
+  const [mounted, setMounted] = useState<boolean>(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const checkDevice = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    checkDevice();
+    window.addEventListener("resize", checkDevice);
+    return () => window.removeEventListener("resize", checkDevice);
+  }, []);
+
+  const marginStyle = mounted && !isDesktop
+    ? {}
+    : { marginBottom: "calc(-1 * var(--scroll-content-height, 100vh))" };
+
   return (
     <div className="relative bg-background-dark">
       {/* SEQUENCE 1 — The Essential Tee (tatakae / Humanity's Strongest) */}
-      <div className="relative z-10 w-full" style={{ marginBottom: "calc(-1 * var(--scroll-content-height, 100vh))" }}>
+      <div className="relative z-10 w-full snap-start snap-always" style={marginStyle}>
         <HeroScroll
           totalFrames={108}
           folderPath="/sequence"
@@ -52,7 +70,7 @@ export default function AnimatedSequencesSection() {
       </div>
 
       {/* SEQUENCE 2 — The Goku Edition */}
-      <div className="relative z-20 w-full" style={{ marginBottom: "calc(-1 * var(--scroll-content-height, 100vh))" }}>
+      <div className="relative z-20 w-full snap-start snap-always" style={marginStyle}>
         <HeroScroll
           totalFrames={97}
           folderPath="/sequence2"
@@ -69,7 +87,7 @@ export default function AnimatedSequencesSection() {
       </div>
 
       {/* SEQUENCE 3 — The Zenitsu Edition (Thunder Breathing) */}
-      <div className="relative z-30 w-full" style={{ marginBottom: "calc(-1 * var(--scroll-content-height, 100vh))" }}>
+      <div className="relative z-30 w-full snap-start snap-always" style={marginStyle}>
         <HeroScroll
           totalFrames={83}
           folderPath="/sequence3"

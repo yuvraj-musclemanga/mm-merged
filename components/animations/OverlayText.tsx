@@ -23,18 +23,20 @@ export default function OverlayText({
   bottomHeading,
   leftHeading,
   rightHeading,
+  triggerThreshold = 0.25,
 }: {
   scrollYProgress: MotionValue<number>;
   topHeading: React.ReactNode;
   bottomHeading: React.ReactNode;
   leftHeading: React.ReactNode;
   rightHeading: React.ReactNode;
+  triggerThreshold?: number;
 }) {
-  // Track whether the canvas spin animation has started (progress >= 0.25)
+  // Track whether the canvas spin animation has started (progress >= triggerThreshold)
   const [spinStarted, setSpinStarted] = useState(false);
 
   useMotionValueEvent(scrollYProgress, "change", (progress) => {
-    setSpinStarted(progress >= 0.25);
+    setSpinStarted(progress >= triggerThreshold);
   });
 
   return (

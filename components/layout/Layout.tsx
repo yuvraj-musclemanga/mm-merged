@@ -16,20 +16,21 @@
  *  │  are fully visible ✓     │
  *  └──────────────────────────┘
  *
- * The content div ref is provided via ScrollContainerContext so that
- * HeroScroll can pass it to framer-motion's useScroll({ container })
- * and have scroll-driven animations track against this div.
+ * DESKTOP (≥ 1024px):
+ *   Lenis smooth-scroll is wired to the content div (wrapper mode).
+ *   The wrapper uses overflow-hidden; Lenis translates the content child.
  *
- * Lenis is initialised in wrapper-mode on the content div so smooth
- * scrolling continues to work. The wrapper uses overflow-hidden (Lenis
- * manages the visual translation); an inner content div is the target
- * Lenis translates.
+ * MOBILE / TABLET (< 1024px):
+ *   Lenis is NOT used. The content div uses overflow-y-auto + native
+ *   scroll-snap-type: y mandatory so that CSS scroll snapping works
+ *   natively between full-screen sections. Lenis would bypass the
+ *   browser's snap algorithm, which is why it's skipped on mobile.
  *
  * CartDrawer, LoginModal, MobileMenu are fixed/absolute so they render
  * correctly regardless of where they live in the tree.
  */
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { CartDrawer } from '../features/CartDrawer';
@@ -47,6 +48,19 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     const { isCartOpen, openCart, closeCart } = useCart();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = React.useState(false);
+
+    // Detect desktop vs mobile/tablet. We default to true (desktop) to match
+    // SSR output and avoid layout flash; the real check runs after mount.
+    const [isDesktop, setIsDesktop] = useState(true);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        const check = () => setIsDesktop(window.innerWidth >= 1024);
+        check();
+        window.addEventListener('resize', check);
+        return () => window.removeEventListener('resize', check);
+    }, []);
 
     // This ref is attached to the scrollable content div and shared via context
     // so HeroScroll can use it as the framer-motion scroll container.
@@ -68,8 +82,12 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         return () => ro.disconnect();
     }, []);
 
-    // Lenis smooth-scroll — wired to the content div (wrapper mode)
+    // Lenis smooth-scroll — DESKTOP ONLY.
+    // On mobile/tablet we skip Lenis so that the browser's native scroll snap
+    // algorithm can operate without interference.
     useEffect(() => {
+        if (!mounted || !isDesktop) return;
+
         const wrapper = scrollContainerRef.current;
         if (!wrapper) return;
 
@@ -97,7 +115,17 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             cancelAnimationFrame(rafId);
             lenis.destroy();
         };
-    }, []);
+    }, [mounted, isDesktop]);
+
+    // On mobile: native scroll with CSS snap.
+    // On desktop: Lenis wrapper mode requires overflow-hidden.
+    const scrollContainerClass = mounted && !isDesktop
+        ? 'flex-1 overflow-y-auto no-scrollbar'
+        : 'flex-1 overflow-hidden no-scrollbar';
+
+    const scrollContainerStyle: React.CSSProperties = mounted && !isDesktop
+        ? { scrollSnapType: 'y proximity', WebkitOverflowScrolling: 'touch' }
+        : {};
 
     return (
         <ScrollContainerContext.Provider value={scrollContainerRef}>
@@ -117,16 +145,10 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 />
 
                 {/* ── DIV 2: Scrollable content area ─────────────────────── */}
-                {/*
-                 * overflow-hidden here because Lenis (in wrapper mode) manages
-                 * the visual scrolling via CSS transform on its content child.
-                 * The no-scrollbar utility hides the native scrollbar.
-                 * sticky elements inside this div naturally stick to its top,
-                 * which is already below the navbar — headings are fully visible.
-                 */}
                 <div
                     ref={scrollContainerRef}
-                    className="flex-1 overflow-hidden no-scrollbar"
+                    className={scrollContainerClass}
+                    style={scrollContainerStyle}
                 >
                     {/* Lenis content target — must be direct child of wrapper */}
                     <div>
@@ -149,8 +171,6 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 };
 
 // ─── Public Layout (provider tree) ───────────────────────────────────────────
-// SmoothScroll wrapper removed — Lenis is now initialised directly in
-// LayoutContent against the content div, not the window.
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return (
         <ToastProvider>
@@ -164,3 +184,4 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         </ToastProvider>
     );
 };
+

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useScroll, useTransform, useMotionValueEvent } from "framer-motion";
 import { useImagePreloader } from "@/hooks/useImagePreloader";
 import OverlayText from "./OverlayText";
@@ -59,36 +59,60 @@ export default function HeroScroll({
   // Without this, useScroll tracks the window which no longer scrolls.
   const scrollContainerRef = useScrollContainer();
 
+  const [isDesktop, setIsDesktop] = useState<boolean>(true);
+  const [mounted, setMounted] = useState<boolean>(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const checkDevice = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    checkDevice();
+    window.addEventListener("resize", checkDevice);
+    return () => window.removeEventListener("resize", checkDevice);
+  }, []);
+
   const framePath = useCallback(
     (index: number) => {
-      const actualFrameNumber = (index - 1) * frameStep;
-      const finalNumber = frameStep === 1 ? index : actualFrameNumber;
+      let finalIndex = index;
+      if (mounted && !isDesktop) {
+        // Use the exact middle frame for mobile/tablet
+        finalIndex = Math.floor(totalFrames / 2);
+      } else {
+        const actualFrameNumber = (index - 1) * frameStep;
+        finalIndex = frameStep === 1 ? index : actualFrameNumber;
+      }
 
       const finalNumberString =
         padNumber > 0
-          ? finalNumber.toString().padStart(padNumber, "0")
-          : finalNumber.toString();
+          ? finalIndex.toString().padStart(padNumber, "0")
+          : finalIndex.toString();
 
       return `${folderPath}/${framePrefix}${finalNumberString}${frameExtension}`;
     },
-    [folderPath, framePrefix, frameStep, frameExtension, padNumber]
+    [folderPath, framePrefix, frameStep, frameExtension, padNumber, mounted, isDesktop, totalFrames]
   );
 
-  const { images, loaded } = useImagePreloader(totalFrames, framePath);
+  const framesToLoad = !mounted ? 0 : (isDesktop ? totalFrames : 1);
+  const { images, loaded } = useImagePreloader(framesToLoad, framePath);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    // container: the element whose scroll drives this animation.
-    // When provided, framer-motion listens to scroll events on this
-    // div instead of the window.
     ...(scrollContainerRef ? { container: scrollContainerRef } : {}),
-    offset: ["start end", "end end"],
+    // Desktop: 4-viewport scroll space to play the full image sequence.
+    // Mobile: section fills screen immediately on snap, so we track from
+    //         "start start" so progress fires as the element enters the top.
+    offset: isDesktop
+      ? (["start end", "end end"] as const)
+      : (["start start", "end end"] as const),
   });
 
   const currentIndex = useTransform(
     scrollYProgress,
     [0.25, 0.75],
-    reverse ? [totalFrames - 1, 0] : [0, totalFrames - 1]
+    isDesktop
+      ? (reverse ? [totalFrames - 1, 0] : [0, totalFrames - 1])
+      : [0, 0]
   );
 
   const renderCanvas = useCallback(
@@ -176,8 +200,17 @@ export default function HeroScroll({
     return () => window.removeEventListener("resize", handleResize);
   }, [loaded, images, currentIndex, renderCanvas]);
 
+  const heightMultiplier = isDesktop ? 4 : 1.0;
+  // Mobile: snap makes the section fill the screen at ~0.35 progress.
+  // We show the overlay text as soon as the section is snapped in.
+  const triggerThreshold = isDesktop ? 0.25 : 0.35;
+
   return (
-    <div ref={containerRef} className="w-full relative" style={{ height: "calc(4 * var(--scroll-content-height, 100vh))" }}>
+    <div
+      ref={containerRef}
+      className="w-full relative"
+      style={{ height: `calc(${heightMultiplier} * var(--scroll-content-height, 100vh))` }}
+    >
       <div
         className="sticky top-0 w-full flex items-center justify-center overflow-hidden bg-background-dark"
         style={{
@@ -210,6 +243,7 @@ export default function HeroScroll({
           bottomHeading={bottomHeading}
           leftHeading={leftHeading}
           rightHeading={rightHeading}
+          triggerThreshold={triggerThreshold}
         />
       </div>
     </div>
