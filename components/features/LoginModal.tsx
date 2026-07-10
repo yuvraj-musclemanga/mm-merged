@@ -425,7 +425,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                                             onChange={handlePhoneChange}
                                             disabled={loading}
                                             required
-                                            className="w-full p-4 bg-transparent border border-white/20 text-white focus:ring-1 focus:ring-white focus:border-white uppercase text-xs tracking-widest placeholder:text-white/20 outline-none transition-all"
+                                            className="w-full p-4 bg-transparent border border-white/20 text-white focus:ring-1 focus:ring-white focus:border-white text-base tracking-widest placeholder:text-white/20 outline-none transition-all"
                                         />
                                     </div>
                                 </div>
