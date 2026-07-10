@@ -9,12 +9,16 @@ import { useWishlist } from '@/context/WishlistContext';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
+import { Portal } from '@/components/ui/Portal';
+
 export default function ProductPage() {
     const { id } = useParams() as { id: string };
     const [product, setProduct] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
+    const [fetchError, setFetchError] = useState(false);
     const [activeImage, setActiveImage] = useState<string | null>(null);
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
+    const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
     const { addToCart } = useCart();
     const { showToast } = useToast();
     const { toggleWishlist, isInWishlist } = useWishlist();
@@ -25,6 +29,12 @@ export default function ProductPage() {
         const fetchProduct = async () => {
             if (!id) return;
 
+            // 15-second timeout so the page never hangs forever on bad networks.
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+            setLoading(true);
+            setFetchError(false);
             try {
                 const { data, error } = await supabase
                     .from('products')
@@ -34,19 +44,24 @@ export default function ProductPage() {
                         product_variants(*)
                     `)
                     .eq('id', id)
+                    .abortSignal(controller.signal)
                     .single();
+
+                clearTimeout(timeoutId);
 
                 if (error) {
                     console.error('Error fetching product:', error);
                     showToast("Product not found", "error");
+                    setFetchError(true);
                 } else {
                     setProduct(data);
-                    // Set initial active image
                     const initialImage = data.product_images?.sort((a: any, b: any) => a.position - b.position)[0]?.image_url;
                     setActiveImage(initialImage || '');
                 }
-            } catch (err) {
+            } catch (err: any) {
+                clearTimeout(timeoutId);
                 console.error('Unexpected error:', err);
+                setFetchError(true);
             } finally {
                 setLoading(false);
             }
@@ -57,8 +72,24 @@ export default function ProductPage() {
 
     if (loading) {
         return (
-            <main className="max-w-[1800px] mx-auto w-full px-6 lg:px-12 py-12 lg:py-20 flex items-center justify-center min-h-[60vh]">
-                <Label>Loading product details...</Label>
+            <main className="max-w-[1800px] mx-auto w-full px-6 lg:px-12 py-12 lg:py-20 flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="animate-spin size-12 border-4 border-white/20 border-t-white rounded-full"></div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/20">Loading product details...</p>
+            </main>
+        );
+    }
+
+    if (fetchError) {
+        return (
+            <main className="max-w-[1800px] mx-auto w-full px-6 lg:px-12 py-12 lg:py-20 flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <span className="material-symbols-outlined text-4xl text-white/20">wifi_off</span>
+                <Label className="text-white/50">Connection timed out. Please check your network.</Label>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="mt-2 border border-white px-6 py-3 text-xs font-black tracking-[0.2em] uppercase hover:bg-white hover:text-black transition-colors"
+                >
+                    Retry
+                </button>
             </main>
         );
     }
@@ -72,7 +103,16 @@ export default function ProductPage() {
     }
 
     const gallery = product.product_images?.sort((a: any, b: any) => a.position - b.position).map((img: any) => img.image_url) || [];
-    const sizes = Array.from(new Set(product.product_variants?.map((v: any) => v.size) || [])) as string[];
+    const rawSizes = Array.from(new Set(product.product_variants?.map((v: any) => v.size) || [])) as string[];
+    const sizeOrder = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+    const sizes = rawSizes.sort((a, b) => {
+        const indexA = sizeOrder.indexOf(a.toUpperCase());
+        const indexB = sizeOrder.indexOf(b.toUpperCase());
+        if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+    });
     const displayPrice = product.product_variants?.[0]?.price ? `₹${product.product_variants[0].price}` : 'TBA';
 
     const handleAddToBag = () => {
@@ -141,7 +181,12 @@ export default function ProductPage() {
                         <div className="mb-12">
                             <div className="flex justify-between items-end mb-6">
                                 <Label>Select Size</Label>
-                                <button className="text-[10px] font-black uppercase tracking-[0.3em] border-b-2 border-white/20 hover:border-white transition-colors pb-1">Size Guide</button>
+                                <button
+                                    onClick={() => setIsSizeGuideOpen(true)}
+                                    className="text-[10px] font-black uppercase tracking-[0.3em] border-b-2 border-white/20 hover:border-white transition-colors pb-1 cursor-pointer"
+                                >
+                                    Size Guide
+                                </button>
                             </div>
                             {sizes.length > 0 ? (
                                 <div className="grid grid-cols-4 gap-3">
@@ -224,9 +269,11 @@ export default function ProductPage() {
                                         <li className="flex items-center gap-3">
                                             <span className="w-2 h-2 bg-white rotate-45"></span>Wash cold, inside out, to preserve the integrity of the fabric and detailing. </li>
                                         <li className="flex items-center gap-3">
-                                            <span className="w-2 h-2 bg-white rotate-45"></span>Hang dry in shade only to maintain structure, color, and longevity. </li>
+                                            <span className="w-2 h-2 bg-white rotate-45"></span>Hang dry in shade to maintain structure, color, and longevity. </li>
                                         <li className="flex items-center gap-3">
                                             <span className="w-2 h-2 bg-white rotate-45"></span>Avoid ironing directly over prints or embellishments. </li>
+                                        <li className="flex items-center gap-3">
+                                            <span className="w-2 h-2 bg-white rotate-45"></span>Wash seperately, avoid machine wash.</li>
                                     </ul>
                                 </div>
                             </details>
@@ -239,6 +286,70 @@ export default function ProductPage() {
                     <p className="text-2xl font-display font-bold uppercase tracking-tighter mx-12">Musclemanga // Drop-01 // Pure Strength // Limited Runs //</p>
                 </Marquee>
             </div>
+
+            {/* Size Guide Modal */}
+            {isSizeGuideOpen && (
+                <Portal>
+                    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                        <div className="relative w-full max-w-xl bg-black border-4 border-white p-8 md:p-12 shadow-[20px_20px_0px_0px_rgba(255,255,255,0.1)] overflow-y-auto max-h-[90vh]">
+                            <button
+                                onClick={() => setIsSizeGuideOpen(false)}
+                                className="absolute top-4 right-4 text-white hover:text-white/60 transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-3xl">close</span>
+                            </button>
+                            <div className="mb-8">
+                                <Label className="mb-2 block">Fit Specifications</Label>
+                                <H1 className="text-2xl md:text-4xl leading-none">Size Guide</H1>
+                                <div className="h-1 w-20 bg-white mt-4"></div>
+                            </div>
+
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse border border-white/10 uppercase text-xs tracking-widest font-black">
+                                    <thead>
+                                        <tr className="border-b border-white bg-white text-black">
+                                            <th className="p-4 font-black">Size</th>
+                                            <th className="p-4 font-black text-right">Chest (in)</th>
+                                            <th className="p-4 font-black text-right">Length (in)</th>
+                                            <th className="p-4 font-black text-right">Shoulder (in)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/10 text-white">
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="p-4 font-black">S</td>
+                                            <td className="p-4 text-right">44</td>
+                                            <td className="p-4 text-right">26</td>
+                                            <td className="p-4 text-right">21</td>
+                                        </tr>
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="p-4 font-black">M</td>
+                                            <td className="p-4 text-right">46</td>
+                                            <td className="p-4 text-right">27</td>
+                                            <td className="p-4 text-right">22</td>
+                                        </tr>
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="p-4 font-black">L</td>
+                                            <td className="p-4 text-right">48</td>
+                                            <td className="p-4 text-right">28</td>
+                                            <td className="p-4 text-right">23</td>
+                                        </tr>
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="p-4 font-black">XL</td>
+                                            <td className="p-4 text-right">50</td>
+                                            <td className="p-4 text-right">29</td>
+                                            <td className="p-4 text-right">24</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <p className="mt-8 text-[10px] font-bold uppercase tracking-[0.15em] text-white/40 leading-relaxed">
+                                Note: All measurements are in inches. Standard oversized boxy fit. We recommend ordering your normal size.
+                            </p>
+                        </div>
+                    </div>
+                </Portal>
+            )}
         </main>
     );
 }

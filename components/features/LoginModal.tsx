@@ -218,7 +218,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
             });
 
             if (signUpError) throw signUpError;
-
+            
+            alert("Account created successfully!\n\nPlease check your inbox and verify your email address using the link sent to you before trying to log in.");
             onClose();
         } catch (err: any) {
             console.error("Registration error:", err);

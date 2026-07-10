@@ -2,6 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { usePathname } from 'next/navigation';
 
 interface MobileMenuProps {
     isOpen: boolean;
@@ -11,14 +12,21 @@ interface MobileMenuProps {
 
 import { Portal } from '@/components/ui/Portal';
 
-interface MobileMenuProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onLoginOpen: () => void;
-}
-
 export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, onLoginOpen }) => {
     const { user, logout } = useAuth();
+    const pathname = usePathname();
+
+    const handleStoryClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        onClose();
+        if (pathname === '/') {
+            e.preventDefault();
+            const element = document.getElementById('our-story');
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -46,8 +54,8 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, onLogin
                             Shop
                         </Link>
                         <Link
-                            href="/about"
-                            onClick={onClose}
+                            href="/#our-story"
+                            onClick={handleStoryClick}
                             className="text-4xl md:text-5xl font-display font-bold uppercase tracking-tighter hover:text-white/60 transition-colors"
                         >
                             Story

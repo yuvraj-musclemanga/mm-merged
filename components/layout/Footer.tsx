@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { FaInstagram } from "react-icons/fa";
+import { FaInstagram, FaWhatsapp } from "react-icons/fa";
 
 export const Footer: React.FC = () => {
     return (
@@ -14,6 +14,9 @@ export const Footer: React.FC = () => {
                     <div className="flex gap-6">
                         <a href="https://www.instagram.com/musclemanga.in?igsh=MXQ4bTMwNGlwMmNmeA%3D%3D&utm_source=qr" className="w-10 h-10 border border-white/10 flex items-center justify-center hover:bg-white hover:text-black transition-all">
                             <FaInstagram className='w-6 h-6' />
+                        </a>
+                        <a href="https://api.whatsapp.com/send/?phone=9988770439&text&type=phone_number&app_absent=0" className="w-10 h-10 border border-white/10 flex items-center justify-center hover:bg-white hover:text-black transition-all">
+                            <FaWhatsapp className='w-6 h-6' />
                         </a>
                         <a href="/contact" className="w-10 h-10 border border-white/10 flex items-center justify-center hover:bg-white hover:text-black transition-all">
                             <span className="material-symbols-outlined text-sm">alternate_email</span>

@@ -35,7 +35,7 @@ export default async function Home() {
 
   return (
     <main>
-      {/* ... (Notice Banner) */}
+      {/* ... (Notice Banners) */}
       <Marquee className="bg-white text-black py-2">
         <p className="text-[10px] md:text-xs font-black uppercase tracking-[0.3em] mx-12">✨Style is influence • Join our influence programme✨</p>
         <p className="text-[10px] md:text-xs font-black uppercase tracking-[0.3em] mx-12">💸 10% off your first purchase with &apos;MM10&apos;</p>
@@ -60,8 +60,8 @@ export default async function Home() {
               {/* <ConditionalMarquee className="text-outline">Unbreakable</ConditionalMarquee> */}
             </H1>
             <div className="flex flex-col sm:flex-row gap-6 mt-12">
-              <Button href="#collection" variant="primary">Shop The Drop</Button>
-              <Button href="#" variant="secondary">Our Philosophy</Button>
+              <Button href="/explore" variant="primary">Shop The Drop</Button>
+              <Button href="#our-story" variant="secondary">Our Philosophy</Button>
             </div>
           </div>
         </div>

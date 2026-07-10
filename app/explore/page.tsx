@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { ProductCard } from "@/components/features/ProductCard";
 import { H1, H3 } from "@/components/ui/Typography";
@@ -31,6 +31,12 @@ export default function ExplorePage() {
 
     // Mobile Modal State
     const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
+
+    // Fetch reliability: track abort controller and request generation
+    // so stale responses from superseded requests never update state.
+    const [fetchError, setFetchError] = useState(false);
+    const fetchControllerRef = useRef<AbortController | null>(null);
+    const fetchGenerationRef = useRef(0);
 
     useEffect(() => {
         fetchMetadata();
@@ -66,14 +72,28 @@ export default function ExplorePage() {
         }
     }
 
-    async function fetchProducts() {
+    async function fetchProducts(attempt = 1) {
+        // ── Abort any in-flight request ──────────────────────────────────
+        if (fetchControllerRef.current) {
+            fetchControllerRef.current.abort();
+        }
+        // Stamp this invocation so we can discard results from stale calls
+        fetchGenerationRef.current += 1;
+        const myGeneration = fetchGenerationRef.current;
+
+        const controller = new AbortController();
+        fetchControllerRef.current = controller;
+
         setIsLoading(true);
+        setFetchError(false);
+
         try {
             const selectStr = `
                 *,
                 categories${categoryFilter !== "All" ? "!inner" : ""}(name),
                 collections${collectionFilter !== "All" ? "!inner" : ""}(name),
                 product_variants(
+                    id,
                     sku,
                     price,
                     size,
@@ -84,32 +104,41 @@ export default function ExplorePage() {
             `;
 
             let query = supabase.from('products').select(selectStr);
-
             if (categoryFilter !== "All") query = query.eq('categories.name', categoryFilter);
             if (collectionFilter !== "All") query = query.eq('collections.name', collectionFilter);
             if (dropFilter !== "All") query = query.eq('drop', dropFilter);
-
             if (sortBy === "newest") query = query.order('created_at', { ascending: false });
-            // Add total_sold logic later if tracking bestseller
 
-            const { data, error } = await query;
+            // Race the Supabase query against an 8-second timeout.
+            // Promise.race is more universally reliable than abortSignal.
+            const timeoutPromise = new Promise<never>((_, reject) =>
+                setTimeout(() => {
+                    controller.abort();
+                    reject(new Error('Request timed out'));
+                }, 8000)
+            );
+
+            const { data, error } = await Promise.race([
+                query.then((res: any) => res),
+                timeoutPromise,
+            ]);
+
+            // A newer request has started — discard these results.
+            if (myGeneration !== fetchGenerationRef.current) return;
 
             if (error) throw error;
 
             if (data) {
                 const processedProducts = (data as any[]).map(p => {
                     let variants = p.product_variants || [];
-
                     if (sizeFilter !== "All") variants = variants.filter((v: any) => v.size === sizeFilter);
                     if (colorFilter !== "All") variants = variants.filter((v: any) => v.color === colorFilter);
-
                     if (variants.length === 0 && (sizeFilter !== "All" || colorFilter !== "All")) return null;
 
                     const sortedPrice = variants.length > 0
                         ? variants.map((v: any) => v.price).sort((a: any, b: any) => a - b)
                         : [0];
                     const minPrice = sortedPrice[0];
-
                     const availableSizes = Array.from(new Set(variants.map((v: any) => v.size)));
 
                     return {
@@ -124,13 +153,26 @@ export default function ExplorePage() {
                 let finalProducts = processedProducts;
                 if (sortBy === "price_low") finalProducts.sort((a, b) => a.minPrice - b.minPrice);
                 if (sortBy === "price_high") finalProducts.sort((a, b) => b.minPrice - a.minPrice);
-
                 setProducts(finalProducts);
             }
-        } catch (error) {
-            console.error("Error fetching products:", error);
+        } catch (err: any) {
+            // A newer request already started — discard this error.
+            if (myGeneration !== fetchGenerationRef.current) return;
+
+            if (attempt < 2) {
+                // Auto-retry once after 1.5 seconds before showing error to user.
+                console.warn(`Fetch attempt ${attempt} failed, retrying...`, err.message);
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                if (myGeneration !== fetchGenerationRef.current) return;
+                return fetchProducts(attempt + 1);
+            }
+
+            console.error("Error fetching products (all attempts failed):", err);
+            setFetchError(true);
         } finally {
-            setIsLoading(false);
+            if (myGeneration === fetchGenerationRef.current) {
+                setIsLoading(false);
+            }
         }
     }
 
@@ -257,8 +299,21 @@ export default function ExplorePage() {
                     {/* Product Grid */}
                     <div className="flex-1">
                         {isLoading ? (
-                            <div className="flex justify-center items-center py-32">
+                            <div className="flex flex-col justify-center items-center py-32 gap-4">
                                 <div className="animate-spin size-12 border-4 border-white/20 border-t-white rounded-full"></div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-white/20">Loading collection...</p>
+                            </div>
+                        ) : fetchError ? (
+                            <div className="text-center py-32 border border-white/10">
+                                <span className="material-symbols-outlined text-4xl text-white/20 mb-4 block">wifi_off</span>
+                                <H3 className="text-white/50 mb-2">FAILED TO LOAD</H3>
+                                <p className="text-sm font-bold uppercase tracking-widest text-white/30 mb-6">Connection timed out. Please check your network and try again.</p>
+                                <button
+                                    onClick={() => fetchProducts()}
+                                    className="border border-white px-6 py-3 text-xs font-black tracking-[0.2em] uppercase hover:bg-white hover:text-black transition-colors"
+                                >
+                                    Retry
+                                </button>
                             </div>
                         ) : products.length === 0 ? (
                             <div className="text-center py-32 border border-white/10">
