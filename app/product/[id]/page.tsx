@@ -41,7 +41,7 @@ export default function ProductPage() {
                     .select(`
                         *,
                         product_images(image_url, position),
-                        product_variants(*)
+                        product_variants(*, inventory(quantity_available))
                     `)
                     .eq('id', id)
                     .abortSignal(controller.signal)
@@ -190,15 +190,30 @@ export default function ProductPage() {
                             </div>
                             {sizes.length > 0 ? (
                                 <div className="grid grid-cols-4 gap-3">
-                                    {sizes.map((size) => (
-                                        <button
-                                            key={size}
-                                            onClick={() => setSelectedSize(size)}
-                                            className={`h-16 border-2 flex items-center justify-center font-bold text-xs transition-all uppercase tracking-widest ${selectedSize === size ? 'bg-white text-black border-white' : 'border-white/10 hover:border-white hover:bg-white/5'}`}
-                                        >
-                                            {size}
-                                        </button>
-                                    ))}
+                                    {sizes.map((size) => {
+                                        const variant = product.product_variants?.find((v: any) => v.size === size);
+                                        const inv = Array.isArray(variant?.inventory) ? variant.inventory[0] : variant?.inventory;
+                                        const stock = inv?.quantity_available || 0;
+                                        const isOutOfStock = stock <= 0;
+
+                                        return (
+                                            <button
+                                                key={size}
+                                                onClick={() => setSelectedSize(size)}
+                                                disabled={isOutOfStock}
+                                                className={`h-16 border-2 flex items-center justify-center font-bold text-xs transition-all uppercase tracking-widest relative ${
+                                                    isOutOfStock 
+                                                        ? 'border-white/5 text-white/20 cursor-not-allowed' 
+                                                        : selectedSize === size 
+                                                            ? 'bg-white text-black border-white' 
+                                                            : 'border-white/10 hover:border-white hover:bg-white/5'
+                                                }`}
+                                            >
+                                                {size}
+                                                {isOutOfStock && <span className="absolute inset-0 w-full h-[1px] bg-white/20 top-1/2 -translate-y-1/2 rotate-[-15deg]"></span>}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             ) : (
                                 <p className="text-white/40 text-xs uppercase tracking-widest">No sizes available</p>

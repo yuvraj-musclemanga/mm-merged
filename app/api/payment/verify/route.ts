@@ -94,7 +94,63 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // 5. Empty the user's cart securely
+        // 5. Update Inventory and Sold Counts
+        const { data: orderItems } = await supabaseAdmin
+            .from('order_items')
+            .select('variant_id, quantity')
+            .eq('order_id', order.id);
+
+        if (orderItems && orderItems.length > 0) {
+            for (const item of orderItems) {
+                // Fetch current inventory for the variant
+                const { data: inv } = await supabaseAdmin
+                    .from('inventory')
+                    .select('id, quantity_available')
+                    .eq('variant_id', item.variant_id)
+                    .single();
+                
+                if (inv) {
+                    const newAvailable = Math.max(0, (inv.quantity_available || 0) - item.quantity);
+                    await supabaseAdmin
+                        .from('inventory')
+                        .update({ 
+                            quantity_available: newAvailable,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', inv.id);
+                }
+                
+                // Update total_sold on product_variants
+                const { data: variant } = await supabaseAdmin
+                    .from('product_variants')
+                    .select('id, total_sold, product_id')
+                    .eq('id', item.variant_id)
+                    .single();
+                    
+                if (variant) {
+                    await supabaseAdmin
+                        .from('product_variants')
+                        .update({ total_sold: (variant.total_sold || 0) + item.quantity })
+                        .eq('id', variant.id);
+                        
+                    // Update total_sold on products
+                    const { data: product } = await supabaseAdmin
+                        .from('products')
+                        .select('id, total_sold')
+                        .eq('id', variant.product_id)
+                        .single();
+                        
+                    if (product) {
+                         await supabaseAdmin
+                            .from('products')
+                            .update({ total_sold: (product.total_sold || 0) + item.quantity })
+                            .eq('id', product.id);
+                    }
+                }
+            }
+        }
+
+        // 6. Empty the user's cart securely
         const { data: cart } = await supabaseAdmin
             .from('carts')
             .select('id')
