@@ -526,14 +526,14 @@ export default function CartPage() {
 
                                     <div className="mb-10">
                                         <Label className="mb-2 block">Discount Code</Label>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-col sm:flex-row gap-2">
                                             <input
-                                                className="flex-grow p-4 bg-transparent border border-white/20 uppercase text-xs tracking-widest outline-none focus:border-white disabled:opacity-50"
-                                                placeholder="ENTER CODE"
+                                                className="flex-grow min-w-0 p-4 bg-transparent border border-white/20 text-base tracking-widest outline-none focus:border-white disabled:opacity-50"
+                                                placeholder="Enter code"
                                                 type="text"
                                                 value={couponCode}
                                                 onChange={(e) => {
-                                                    setCouponCode(e.target.value.toUpperCase());
+                                                    setCouponCode(e.target.value);
                                                     if (couponError) setCouponError('');
                                                 }}
                                                 disabled={isValidatingCoupon || isProcessingPayment || !!appliedCoupon}
@@ -541,7 +541,7 @@ export default function CartPage() {
                                             {appliedCoupon ? (
                                                 <button
                                                     onClick={handleRemoveCoupon}
-                                                    className="px-6 border border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white text-xs font-black uppercase tracking-widest transition-all"
+                                                    className="shrink-0 px-4 py-3 sm:py-0 border border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white text-xs font-black uppercase tracking-widest transition-all"
                                                     type="button"
                                                 >
                                                     Remove
@@ -549,7 +549,7 @@ export default function CartPage() {
                                             ) : (
                                                 <button
                                                     onClick={handleApplyCoupon}
-                                                    className="px-6 border border-white text-white hover:bg-white hover:text-black text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                                                    className="shrink-0 px-4 py-3 sm:py-0 border border-white text-white hover:bg-white hover:text-black text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50"
                                                     disabled={isValidatingCoupon || isProcessingPayment || !couponCode.trim()}
                                                     type="button"
                                                 >

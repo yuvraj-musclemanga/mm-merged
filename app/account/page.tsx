@@ -437,15 +437,17 @@ export default function AccountPage() {
                                 <div className="py-20 text-center">
                                     <p className="text-[10px] font-black tracking-widest text-white/20 uppercase animate-pulse">Fetching Secure Records...</p>
                                 </div>
-                            ) : orders.length === 0 ? (
-                                <div className="py-20 text-center border border-dashed border-white/10">
-                                    <p className="text-[10px] font-black tracking-widest text-white/40 uppercase mb-4">No orders found.</p>
-                                    <button onClick={() => router.push('/explore')} className="text-[10px] font-black tracking-widest border-b border-white hover:text-white/60 transition-colors uppercase">Start Shopping</button>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {orders.map((order) => {
-                                        const isExpanded = expandedOrderId === order.id;
+                            ) : (() => {
+                                const confirmedOrders = orders.filter(o => o.status !== 'pending');
+                                return confirmedOrders.length === 0 ? (
+                                    <div className="py-20 text-center border border-dashed border-white/10">
+                                        <p className="text-[10px] font-black tracking-widest text-white/40 uppercase mb-4">No orders found.</p>
+                                        <button onClick={() => router.push('/explore')} className="text-[10px] font-black tracking-widest border-b border-white hover:text-white/60 transition-colors uppercase">Start Shopping</button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {confirmedOrders.map((order) => {
+                                            const isExpanded = expandedOrderId === order.id;
                                         return (
                                             <div
                                                 key={order.id}
@@ -556,8 +558,9 @@ export default function AccountPage() {
                                             </div>
                                         );
                                     })}
-                                </div>
-                            )}
+                                    </div>
+                                );
+                            })()}
                         </div>
                     )}
 
