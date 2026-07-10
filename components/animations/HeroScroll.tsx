@@ -59,10 +59,15 @@ export default function HeroScroll({
   // Without this, useScroll tracks the window which no longer scrolls.
   const scrollContainerRef = useScrollContainer();
 
+  // Load only every sixth image to decrease network/memory usage
+  const loadedFramesCount = Math.ceil(totalFrames / 5);
+
   const framePath = useCallback(
     (index: number) => {
-      const actualFrameNumber = (index - 1) * frameStep;
-      const finalNumber = frameStep === 1 ? index : actualFrameNumber;
+      // Map 1-based index (1, 2, 3...) to every sixth frame index (1, 7, 13...)
+      const originalIndex = (index - 1) * 5 + 1;
+      const actualFrameNumber = (originalIndex - 1) * frameStep;
+      const finalNumber = frameStep === 1 ? originalIndex : actualFrameNumber;
 
       const finalNumberString =
         padNumber > 0
@@ -74,7 +79,7 @@ export default function HeroScroll({
     [folderPath, framePrefix, frameStep, frameExtension, padNumber]
   );
 
-  const { images, loaded } = useImagePreloader(totalFrames, framePath);
+  const { images, loaded } = useImagePreloader(loadedFramesCount, framePath);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -88,7 +93,7 @@ export default function HeroScroll({
   const currentIndex = useTransform(
     scrollYProgress,
     [0.25, 0.75],
-    reverse ? [totalFrames - 1, 0] : [0, totalFrames - 1]
+    reverse ? [loadedFramesCount - 1, 0] : [0, loadedFramesCount - 1]
   );
 
   const renderCanvas = useCallback(
@@ -104,6 +109,7 @@ export default function HeroScroll({
 
       // Handle high-DPI displays for crisp rendering
       const dpr = window.devicePixelRatio || 1;
+      // const dpr = 1;
       const rect = canvas.getBoundingClientRect();
 
       // Set actual memory size scaled by pixel density
