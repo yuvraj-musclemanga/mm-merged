@@ -432,21 +432,17 @@ export default function CartPage() {
                         </div>
 
                         {!user ? (
-                            <div className="bg-card-dark border border-white/10 p-8 lg:p-12">
-                                <AddressForm
-                                    initialData={guestAddress}
-                                    onChange={(data) => setGuestAddress(data)}
-                                    showSubmitButton={false}
-                                    hideDefaultCheckbox={true}
-                                />
-                                <div className="mt-8 pt-8 border-t border-white/10 text-center">
-                                    <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.2em] leading-relaxed mb-4">
-                                        Please log in to complete your purchase securely.
-                                    </p>
-                                    <Link href="/login">
-                                        <Button className="tracking-[0.2em]">LOG IN TO CHECKOUT</Button>
-                                    </Link>
-                                </div>
+                            <div className="bg-card-dark border border-white/10 p-12 text-center flex flex-col items-center justify-center min-h-[250px]">
+                                <span className="material-symbols-outlined text-4xl text-white/20 mb-4">lock</span>
+                                <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.25em] leading-relaxed mb-6 max-w-sm">
+                                    Please log in to add shipping details and proceed to checkout.
+                                </p>
+                                <Button 
+                                    className="tracking-[0.2em]"
+                                    onClick={() => window.dispatchEvent(new Event('open-login-modal'))}
+                                >
+                                    LOG IN TO CHECKOUT
+                                </Button>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

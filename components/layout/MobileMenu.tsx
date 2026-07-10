@@ -70,7 +70,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, onLogin
                                         <span className="text-xs font-black uppercase tracking-[0.3em]">Account</span>
                                         <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">person</span>
                                     </Link>
-                                    <button onClick={() => { onClose(); logout(); }} className="flex items-center justify-between group w-full text-red-500/80 hover:text-red-500 transition-colors">
+                                    <button onClick={() => logout()} className="flex items-center justify-between group w-full text-red-500/80 hover:text-red-500 transition-colors">
                                         <span className="text-xs font-black uppercase tracking-[0.3em]">Logout</span>
                                         <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">logout</span>
                                     </button>

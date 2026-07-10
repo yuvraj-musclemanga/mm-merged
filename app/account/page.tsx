@@ -9,7 +9,7 @@ import { getAddresses, addAddress, updateAddress, deleteAddress, setDefaultAddre
 import { ProductCard } from '@/components/features/ProductCard';
 
 export default function AccountPage() {
-    const { user, logout } = useAuth();
+    const { user, loading, logout } = useAuth();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'profile' | 'wishlist' | 'orders' | 'wallet'>('profile');
     const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
@@ -25,20 +25,22 @@ export default function AccountPage() {
     const [isLoadingWishlist, setIsLoadingWishlist] = useState(false);
 
     useEffect(() => {
-        if (user === null) {
-            router.push('/');
-        } else {
-            fetchAddresses();
+        if (!loading) {
+            if (user === null) {
+                router.push('/');
+            } else {
+                fetchAddresses();
 
-            // Handle deep linking to sections (e.g., /account?section=orders)
-            const params = new URLSearchParams(window.location.search);
-            const section = params.get('section');
-            if (section === 'orders') setActiveTab('orders');
-            else if (section === 'wishlist') setActiveTab('wishlist');
-            else if (section === 'wallet') setActiveTab('wallet');
-            else if (section === 'profile') setActiveTab('profile');
+                // Handle deep linking to sections (e.g., /account?section=orders)
+                const params = new URLSearchParams(window.location.search);
+                const section = params.get('section');
+                if (section === 'orders') setActiveTab('orders');
+                else if (section === 'wishlist') setActiveTab('wishlist');
+                else if (section === 'wallet') setActiveTab('wallet');
+                else if (section === 'profile') setActiveTab('profile');
+            }
         }
-    }, [user, router]);
+    }, [user, loading, router]);
 
     const fetchAddresses = async () => {
         if (!user) return;
@@ -141,6 +143,12 @@ export default function AccountPage() {
             fetchWishlistItems();
         }
     }, [activeTab]);
+
+    if (loading) return (
+        <div className="min-h-screen flex items-center justify-center bg-background-dark">
+            <div className="animate-spin size-8 border-4 border-white/20 border-t-white rounded-full" />
+        </div>
+    );
 
     if (!user) return null;
 

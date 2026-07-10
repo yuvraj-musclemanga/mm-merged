@@ -31,6 +31,14 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     const [isLoginModalOpen, setIsLoginModalOpen] = React.useState(false);
 
     React.useEffect(() => {
+        const handleOpenLoginModal = () => {
+            setIsLoginModalOpen(true);
+        };
+        window.addEventListener('open-login-modal', handleOpenLoginModal);
+        return () => window.removeEventListener('open-login-modal', handleOpenLoginModal);
+    }, []);
+
+    React.useEffect(() => {
         const handleAnchorClick = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
             const anchor = target.closest('a');
