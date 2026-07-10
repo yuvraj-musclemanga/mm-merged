@@ -20,7 +20,8 @@ const SEQUENCES = [
   {
     image: "/pictures/tatakae.jpg",
     alt: "Humanity's Strongest — Tatakae Tee",
-    topHeading: "HUMANITY'S STRONGEST",
+    topHeading1: "HUMANITY'S",
+    topHeading2: "STRONGEST",
     leftCard: "240 GSM FRENCH TERRY COTTON FABRIC",
     rightCard: "SUPERIOR PRINT QUALITY",
     bottomCard: "LUXURY IN EVERY FIBER",
@@ -29,7 +30,8 @@ const SEQUENCES = [
   {
     image: "/pictures/goku.jpg",
     alt: "The Spirit of Goku — Goku Edition Tee",
-    topHeading: "SPIRIT OF GOKU",
+    topHeading1: "SPIRIT OF",
+    topHeading2: "GOKU",
     leftCard: "PREMIUM EMBROIDERY WORK",
     rightCard: "SKIN FRIENDLY SOFT TOUCH FABRIC",
     bottomCard: "ELEVATED COMFORT",
@@ -38,7 +40,8 @@ const SEQUENCES = [
   {
     image: "/pictures/zenitsu.jpg",
     alt: "Thunder Breathing — Zenitsu Edition Tee",
-    topHeading: "THUNDER BREATHING",
+    topHeading1: "THUNDER",
+    topHeading2: "BREATHING",
     leftCard: "ORIGINAL EXCLUSIVE DESIGNS",
     rightCard: "LIMITED DROPS ONLY",
     bottomCard: "LIMITLESS POSSIBILITIES",
@@ -46,8 +49,9 @@ const SEQUENCES = [
   },
   {
     image: "/pictures/skinny_bitch1.jpg",
-    alt: "Don't be a Skinny Bitch",
-    topHeading: "SKINNY BITCH",
+    alt: "Don't be a Skinny B*tch",
+    topHeading1: "SKINNY",
+    topHeading2: "B*TCH",
     leftCard: "PREMIUM PUFF PRINT",
     rightCard: "BOXY FIT OVERSIZED",
     bottomCard: "BOLD DEMEANOUR",
@@ -88,7 +92,9 @@ export default function AnimatedSequencesSection() {
                 className="text-4xl lg:text-6xl text-white tracking-wide text-left drop-shadow-2xl font-bold leading-tight mb-4"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                {seq.topHeading}
+                {seq.topHeading1}
+                <br />
+                {seq.topHeading2}
               </h2>
               <p className="text-white/60 tracking-widest text-sm md:text-base font-medium mb-8">
                 UNISEX OVERSIZED TEE
@@ -131,7 +137,9 @@ export default function AnimatedSequencesSection() {
                 className="text-3xl md:text-5xl text-white tracking-wide text-center drop-shadow-2xl font-bold leading-tight mb-4"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                {seq.topHeading}
+                {seq.topHeading1}
+                <br />
+                {seq.topHeading2}
               </h2>
               <Link
                 href={`/product/${seq.productId}`}

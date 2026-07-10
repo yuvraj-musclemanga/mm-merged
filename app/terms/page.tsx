@@ -1,5 +1,5 @@
 "use client";
-import React from 'react';
+import React from 'react'
 import { Accordion } from '@/components/ui/Accordion';
 
 export default function TermsPage() {
@@ -52,10 +52,10 @@ export default function TermsPage() {
             content: (
                 <>
                     <p>
-                        Currently, Musclemanga ships exclusively within the United Kingdom. Orders are processed within 1-3 business days. Delivery times are estimates and commence from the date of shipping, rather than the date of order.
+                        We offer Pan India shipping, with deliveries typically arriving within 7-10 business days. Orders are processed and dispatched within 48 hours of placement. All orders are shipped and tracked via premium courier partners.
                     </p>
                     <p>
-                        Our returns policy lasts 30 days. If 30 days have gone by since your purchase, unfortunately, we can&apos;t offer you a refund or exchange. To be eligible for a return, your item must be unused and in the same condition that you received it.
+                        As part of our commitment to exclusivity and quality control, we do not offer returns. Size exchanges are permitted, subject to stock availability. Requests for exchanges must be raised within 24 hours of delivery.
                     </p>
                 </>
             ),
@@ -88,7 +88,7 @@ export default function TermsPage() {
             content: (
                 <>
                     <p>
-                        Questions about the Terms and Conditions should be sent to us at support@musclemanga.com.
+                        Questions about the Terms and Conditions should be sent to us at support@musclemanga.in.
                     </p>
                 </>
             ),

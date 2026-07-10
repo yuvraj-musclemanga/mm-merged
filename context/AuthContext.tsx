@@ -127,7 +127,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (error) {
             console.error("Error signing out:", error);
         } finally {
+            setUser(null);
             setLoading(false);
+            window.location.href = '/';
         }
     };
 
