@@ -93,7 +93,7 @@ export default function AnimatedSequencesSection() {
               <p className="text-white/60 tracking-widest text-sm md:text-base font-medium mb-8">
                 UNISEX OVERSIZED TEE
               </p>
-              <Link 
+              <Link
                 href={`/product/${seq.productId}`}
                 className="px-8 py-3.5 bg-white/5 hover:bg-white text-white hover:text-black border border-white/20 hover:border-white transition-all duration-300 rounded-full tracking-widest text-xs lg:text-sm font-semibold backdrop-blur-md shadow-lg hover:shadow-white/20 cursor-pointer pointer-events-auto text-center"
               >
@@ -133,7 +133,7 @@ export default function AnimatedSequencesSection() {
               >
                 {seq.topHeading}
               </h2>
-              <Link 
+              <Link
                 href={`/product/${seq.productId}`}
                 className="px-6 py-2.5 bg-white/5 hover:bg-white text-white hover:text-black border border-white/20 hover:border-white transition-all duration-300 rounded-full tracking-widest text-[10px] md:text-xs font-semibold backdrop-blur-md shadow-lg hover:shadow-white/20 cursor-pointer pointer-events-auto text-center"
               >
@@ -164,7 +164,7 @@ export default function AnimatedSequencesSection() {
       ))}
 
       {/* ─── Our Story section ─────────────────────────────────────────────── */}
-      <div className="relative z-40 w-full bg-background-dark">
+      <div id="our-story" className="relative z-40 w-full bg-background-dark">
         <section className="max-w-[1600px] mx-auto py-32 px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
           <div>
             <p className="mb-6 block text-xs font-black uppercase tracking-[0.3em] text-white/50">
@@ -187,10 +187,10 @@ export default function AnimatedSequencesSection() {
           <div className="relative">
             <div className="aspect-square border border-white/10 bg-card-dark overflow-hidden p-8">
               <div
-                className="w-full h-full bg-cover bg-center grayscale contrast-150"
+                className="w-full h-full bg-cover bg-center"
                 style={{
                   backgroundImage:
-                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAdDZVsqBCGQ426VBQD0o9tc9zY9BEEpy7Eu_j3vw7SYd_ilm-e_p8DzXWx17mFu7K4BgRDjXTWs62lEO0Q4P_mYLd7GrViUZkDbbAa5hq-XLVl_Pl09K5CmXztXHeYv5aK_IIQdKYsEdVERWKqj5zsIZTPgLlMISHENl_OstAHdEmrgMtUkj4fPpQqJA4ubtvhiXiGM4qEReKSqrIE4MjlyFgeP1BqXytDvdfQzQzRi8DfvOirPFtGXMV0B748k3f4mLIymE2cZ4DP")',
+                    'url("https://bbglnzpzdihtdcuxfoma.supabase.co/storage/v1/object/public/products/assets/studio-setup-t-shirt-mockup-female-model-standing-with-backdrop-frame-clean-lighting-03932.jpg")',
                 }}
               />
             </div>

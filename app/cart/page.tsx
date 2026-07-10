@@ -20,14 +20,58 @@ export default function CartPage() {
     const [editingAddress, setEditingAddress] = useState<Address | null>(null);
     const [isLoadingAddresses, setIsLoadingAddresses] = useState(true);
     const { items, removeFromCart, updateQuantity, cartCount, cartTotal } = useCart();
-    
+
     // Checkout states
     const [couponCode, setCouponCode] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_percentage: number } | null>(null);
+    const [couponError, setCouponError] = useState('');
+    const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
     const [isPaymentSuccessModalOpen, setIsPaymentSuccessModalOpen] = useState(false);
     const [successOrderId, setSuccessOrderId] = useState<string>('');
     const { toggleWishlist } = useWishlist();
     const [removingItem, setRemovingItem] = useState<string | null>(null);
+
+    const handleApplyCoupon = async () => {
+        if (!couponCode.trim()) {
+            setCouponError('Please enter a coupon code.');
+            setAppliedCoupon(null);
+            return;
+        }
+
+        setIsValidatingCoupon(true);
+        setCouponError('');
+        try {
+            const res = await fetch('/api/coupons/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ couponCode: couponCode.trim() })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                setAppliedCoupon({
+                    code: data.code,
+                    discount_percentage: data.discount_percentage
+                });
+            } else {
+                setCouponError(data.error || 'Invalid coupon code.');
+                setAppliedCoupon(null);
+            }
+        } catch (err) {
+            console.error('Failed to validate coupon', err);
+            setCouponError('Could not validate coupon.');
+            setAppliedCoupon(null);
+        } finally {
+            setIsValidatingCoupon(false);
+        }
+    };
+
+    const handleRemoveCoupon = () => {
+        setCouponCode('');
+        setAppliedCoupon(null);
+        setCouponError('');
+    };
 
     const handleMoveToWishlist = async (id: string, size: string) => {
         await toggleWishlist(id);
@@ -174,6 +218,7 @@ export default function CartPage() {
         }
 
         setIsProcessingPayment(true);
+        let paymentFlowInitiated = false;
         try {
             const isScriptLoaded = await initializeRazorpay();
             if (!isScriptLoaded) {
@@ -199,7 +244,7 @@ export default function CartPage() {
                 },
                 body: JSON.stringify({
                     addressId: selectedAddress.id,
-                    couponCode: couponCode
+                    couponCode: appliedCoupon ? appliedCoupon.code : ''
                 })
             });
 
@@ -207,6 +252,7 @@ export default function CartPage() {
             if (!res.ok) {
                 throw new Error(orderData.error || "Failed to create order");
             }
+
 
             // 2. Setup Razorpay Frontend options
             const options = {
@@ -217,25 +263,36 @@ export default function CartPage() {
                 description: "Order Checkout",
                 order_id: orderData.razorpayOrderId,
                 handler: async function (response: any) {
-                    // 3. Verify Payment
-                    const verifyRes = await fetch('/api/payment/verify', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_signature: response.razorpay_signature,
-                            internalOrderId: orderData.orderId
-                        })
-                    });
-                    
-                    const verifyData = await verifyRes.json();
-                    if (verifyRes.ok) {
-                         setSuccessOrderId(orderData.orderId);
-                         setIsPaymentSuccessModalOpen(true);
-                    } else {
-                         alert(`Payment verification failed: ${verifyData.error || 'Unknown error'}`);
-                         console.error(verifyData.error);
+                    // Re-assert processing overlay since Razorpay modal closed
+                    setIsProcessingPayment(true);
+
+                    try {
+                        // 3. Verify Payment
+                        const verifyRes = await fetch('/api/payment/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_signature: response.razorpay_signature,
+                                internalOrderId: orderData.orderId
+                            })
+                        });
+
+                        const verifyData = await verifyRes.json();
+                        if (verifyRes.ok) {
+                            setSuccessOrderId(orderData.orderId);
+                            setIsPaymentSuccessModalOpen(true);
+                            setIsProcessingPayment(false);
+                        } else {
+                            alert(`Payment verification failed: ${verifyData.error || 'Unknown error'}`);
+                            console.error(verifyData.error);
+                            setIsProcessingPayment(false);
+                        }
+                    } catch (err) {
+                        console.error("Verification error:", err);
+                        alert("An error occurred during payment verification.");
+                        setIsProcessingPayment(false);
                     }
                 },
                 prefill: {
@@ -243,23 +300,37 @@ export default function CartPage() {
                     email: user.email || selectedAddress.receiver_email || '',
                     contact: user.phone || selectedAddress.receiver_phone || ''
                 },
-                theme: { color: "#FFFFFF" }
+                theme: { color: "#FFFFFF" },
+                modal: {
+                    ondismiss: function () {
+                        // If they dismiss the Razorpay checkout, remove overlay
+                        setIsProcessingPayment(false);
+                    }
+                }
             };
 
+            paymentFlowInitiated = true;
             const rzp = new (window as any).Razorpay(options);
             rzp.on('payment.failed', function (response: any) {
                 console.error("Payment failed", response.error);
                 alert("Payment Failed. Try again.");
+                setIsProcessingPayment(false);
             });
             rzp.open();
 
         } catch (error: any) {
             console.error(error);
             alert(`Checkout Error: ${error.message}`);
-        } finally {
             setIsProcessingPayment(false);
+        } finally {
+            // Only turn off processing overlay if we failed BEFORE launching Razorpay.
+            // If Razorpay opened, let the Razorpay event handlers / verify endpoint control isProcessingPayment.
+            if (!paymentFlowInitiated) {
+                setIsProcessingPayment(false);
+            }
         }
     };
+
 
     return (
         <main className="relative z-10 max-w-[1400px] mx-auto w-full px-6 lg:px-12 py-12 lg:py-20 grow">
@@ -287,10 +358,10 @@ export default function CartPage() {
                                 items.map((item, index) => {
                                     const itemId = `${item.id}-${item.size}`;
                                     const isRemoving = removingItem === itemId;
-                                    
+
                                     return (
                                         <div key={itemId} className="py-8 flex gap-8 items-start border-b border-white/10 last:border-0">
-                                            <div className="w-32 h-40 bg-cover bg-center grayscale border border-white/10" style={{ backgroundImage: `url("${item.image}")` }}></div>
+                                            <div className="w-32 h-40 bg-cover bg-center border border-white/10" style={{ backgroundImage: `url("${item.image}")` }}></div>
                                             <div className="flex-grow flex flex-col md:flex-row justify-between gap-6">
                                                 <div className="space-y-2">
                                                     <h3 className="text-sm font-black tracking-[0.1em]">{item.name}</h3>
@@ -309,23 +380,23 @@ export default function CartPage() {
                                                             </button>
                                                         </div>
                                                     )}
-                                                    
+
                                                     <div className="flex items-center gap-4">
                                                         {isRemoving ? (
                                                             <>
-                                                                <button 
+                                                                <button
                                                                     onClick={() => handleMoveToWishlist(item.id, item.size)}
                                                                     className="text-[9px] font-black tracking-widest text-white border border-white/20 px-4 py-2 hover:bg-white hover:text-black transition-all"
                                                                 >
                                                                     SAVE TO WISHLIST
                                                                 </button>
-                                                                <button 
+                                                                <button
                                                                     onClick={() => { removeFromCart(item.id, item.size); setRemovingItem(null); }}
                                                                     className="text-[9px] font-black tracking-widest text-red-500 border border-red-500/20 px-4 py-2 hover:bg-red-500 hover:text-white transition-all"
                                                                 >
                                                                     DELETE
                                                                 </button>
-                                                                <button 
+                                                                <button
                                                                     onClick={() => setRemovingItem(null)}
                                                                     className="material-symbols-outlined text-white/20 hover:text-white"
                                                                 >
@@ -333,8 +404,8 @@ export default function CartPage() {
                                                                 </button>
                                                             </>
                                                         ) : (
-                                                            <button 
-                                                                onClick={() => setRemovingItem(itemId)} 
+                                                            <button
+                                                                onClick={() => setRemovingItem(itemId)}
                                                                 className="text-[10px] font-black tracking-widest text-white/40 hover:text-white underline decoration-white/20 underline-offset-4"
                                                             >
                                                                 Remove
@@ -359,22 +430,22 @@ export default function CartPage() {
                                 </button>
                             )}
                         </div>
-                        
+
                         {!user ? (
                             <div className="bg-card-dark border border-white/10 p-8 lg:p-12">
-                                <AddressForm 
+                                <AddressForm
                                     initialData={guestAddress}
                                     onChange={(data) => setGuestAddress(data)}
                                     showSubmitButton={false}
                                     hideDefaultCheckbox={true}
                                 />
                                 <div className="mt-8 pt-8 border-t border-white/10 text-center">
-                                     <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.2em] leading-relaxed mb-4">
-                                          Please log in to complete your purchase securely.
-                                     </p>
-                                     <Link href="/login">
+                                    <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.2em] leading-relaxed mb-4">
+                                        Please log in to complete your purchase securely.
+                                    </p>
+                                    <Link href="/login">
                                         <Button className="tracking-[0.2em]">LOG IN TO CHECKOUT</Button>
-                                     </Link>
+                                    </Link>
                                 </div>
                             </div>
                         ) : (
@@ -428,38 +499,82 @@ export default function CartPage() {
                 <div className="lg:col-span-4">
                     <div className="sticky top-40 bg-card-dark border border-white/10 p-8 lg:p-10">
                         <H3 className="text-lg mb-8 pb-4 border-b border-white/10">Order Summary</H3>
-                        <div className="space-y-4 mb-10">
-                            <div className="flex justify-between text-[10px] font-black tracking-widest text-white/60">
-                                <span>Subtotal</span>
-                                <span>₹{cartTotal.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between text-[10px] font-black tracking-widest text-white/60">
-                                <span>Shipping</span>
-                                <span>FREE</span>
-                            </div>
-                            <div className="pt-6 mt-6 border-t border-white/10 flex justify-between items-end">
-                                <span className="text-xs font-black tracking-[0.2em]">Total</span>
-                                <span className="text-2xl font-display font-bold">₹{cartTotal.toFixed(2)}*</span>
-                            </div>
-                            <p className="text-[9px] text-white/30 text-right uppercase tracking-[0.1em]">*Discounts apply on next step</p>
-                        </div>
+                        {(() => {
+                            const discountAmount = appliedCoupon ? cartTotal * (appliedCoupon.discount_percentage / 100) : 0;
+                            const finalTotal = cartTotal - discountAmount;
 
-                        <div className="mb-10">
-                            <Label className="mb-2 block">Discount Code</Label>
-                            <div className="flex gap-2">
-                                <input 
-                                    className="flex-grow p-4 bg-transparent border border-white/20 uppercase text-xs tracking-widest" 
-                                    placeholder="ENTER CODE" 
-                                    type="text" 
-                                    value={couponCode}
-                                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                                />
-                            </div>
-                        </div>
+                            return (
+                                <>
+                                    <div className="space-y-4 mb-10">
+                                        <div className="flex justify-between text-[10px] font-black tracking-widest text-white/60">
+                                            <span>Subtotal</span>
+                                            <span>₹{cartTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        </div>
+                                        {appliedCoupon && (
+                                            <div className="flex justify-between text-[10px] font-black tracking-widest text-green-400">
+                                                <span>Discount ({appliedCoupon.code} - {appliedCoupon.discount_percentage}%)</span>
+                                                <span>-₹{discountAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                            </div>
+                                        )}
+                                        <div className="flex justify-between text-[10px] font-black tracking-widest text-white/60">
+                                            <span>Shipping</span>
+                                            <span>FREE</span>
+                                        </div>
+                                        <div className="pt-6 mt-6 border-t border-white/10 flex justify-between items-end">
+                                            <span className="text-xs font-black tracking-[0.2em]">Total</span>
+                                            <span className="text-2xl font-display font-bold">
+                                                ₹{finalTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </span>
+                                        </div>
+                                    </div>
 
-                        <Button 
-                            fullWidth 
-                            className="tracking-[0.3em] mb-4" 
+                                    <div className="mb-10">
+                                        <Label className="mb-2 block">Discount Code</Label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                className="flex-grow p-4 bg-transparent border border-white/20 uppercase text-xs tracking-widest outline-none focus:border-white disabled:opacity-50"
+                                                placeholder="ENTER CODE"
+                                                type="text"
+                                                value={couponCode}
+                                                onChange={(e) => {
+                                                    setCouponCode(e.target.value.toUpperCase());
+                                                    if (couponError) setCouponError('');
+                                                }}
+                                                disabled={isValidatingCoupon || isProcessingPayment || !!appliedCoupon}
+                                            />
+                                            {appliedCoupon ? (
+                                                <button
+                                                    onClick={handleRemoveCoupon}
+                                                    className="px-6 border border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white text-xs font-black uppercase tracking-widest transition-all"
+                                                    type="button"
+                                                >
+                                                    Remove
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={handleApplyCoupon}
+                                                    className="px-6 border border-white text-white hover:bg-white hover:text-black text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                                                    disabled={isValidatingCoupon || isProcessingPayment || !couponCode.trim()}
+                                                    type="button"
+                                                >
+                                                    {isValidatingCoupon ? '...' : 'Apply'}
+                                                </button>
+                                            )}
+                                        </div>
+                                        {couponError && (
+                                            <p className="mt-2 text-[10px] font-bold text-red-400 uppercase tracking-widest">{couponError}</p>
+                                        )}
+                                        {appliedCoupon && (
+                                            <p className="mt-2 text-[10px] font-bold text-green-400 uppercase tracking-widest">✓ Coupon code applied successfully</p>
+                                        )}
+                                    </div>
+                                </>
+                            );
+                        })()}
+
+                        <Button
+                            fullWidth
+                            className="tracking-[0.3em] mb-4"
                             onClick={handleCheckout}
                             disabled={isProcessingPayment || items.length === 0 || !user}
                         >
@@ -488,9 +603,9 @@ export default function CartPage() {
                 initialData={editingAddress}
                 onSave={handleSaveAddress}
             />
-            <PaymentSuccessModal 
-                isOpen={isPaymentSuccessModalOpen} 
-                orderId={successOrderId} 
+            <PaymentSuccessModal
+                isOpen={isPaymentSuccessModalOpen}
+                orderId={successOrderId}
             />
 
             {/* Full-screen Payment Processing Overlay */}

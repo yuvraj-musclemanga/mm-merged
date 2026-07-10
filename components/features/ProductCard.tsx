@@ -97,19 +97,30 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {/* Sizes Selection */}
             <div className="mb-4">
                 <div className="grid grid-cols-5 gap-2">
-                    {sizes.map((size) => (
-                        <button
-                            key={size}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setSelectedSize(size);
-                            }}
-                            className={`h-8 border flex items-center justify-center font-bold text-[10px] transition-all uppercase tracking-widest ${selectedSize === size ? 'bg-white text-black border-white' : 'border-white/10 hover:border-white hover:bg-white/5'}`}
-                        >
-                            {size}
-                        </button>
-                    ))}
+                    {(() => {
+                        const sizeOrder = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+                        const sortedSizes = [...sizes].sort((a, b) => {
+                            const indexA = sizeOrder.indexOf(a.toUpperCase());
+                            const indexB = sizeOrder.indexOf(b.toUpperCase());
+                            if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+                            if (indexA === -1) return 1;
+                            if (indexB === -1) return -1;
+                            return indexA - indexB;
+                        });
+                        return sortedSizes.map((size) => (
+                            <button
+                                key={size}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setSelectedSize(size);
+                                }}
+                                className={`h-8 border flex items-center justify-center font-bold text-[10px] transition-all uppercase tracking-widest ${selectedSize === size ? 'bg-white text-black border-white' : 'border-white/10 hover:border-white hover:bg-white/5'}`}
+                            >
+                                {size}
+                            </button>
+                        ));
+                    })()}
                 </div>
                 {sizes.length === 0 && <p className="text-white/40 text-[10px] uppercase tracking-widest">No sizes available</p>}
             </div>

@@ -60,8 +60,8 @@ export default async function Home() {
               {/* <ConditionalMarquee className="text-outline">Unbreakable</ConditionalMarquee> */}
             </H1>
             <div className="flex flex-col sm:flex-row gap-6 mt-12">
-              <Button href="#collection" variant="primary">Shop The Drop</Button>
-              <Button href="#" variant="secondary">Our Philosophy</Button>
+              <Button href="/explore" variant="primary">Shop The Drop</Button>
+              <Button href="#our-story" variant="secondary">Our Philosophy</Button>
             </div>
           </div>
         </div>

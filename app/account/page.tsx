@@ -29,7 +29,7 @@ export default function AccountPage() {
             router.push('/');
         } else {
             fetchAddresses();
-            
+
             // Handle deep linking to sections (e.g., /account?section=orders)
             const params = new URLSearchParams(window.location.search);
             const section = params.get('section');
@@ -439,8 +439,8 @@ export default function AccountPage() {
                                     {orders.map((order) => {
                                         const isExpanded = expandedOrderId === order.id;
                                         return (
-                                            <div 
-                                                key={order.id} 
+                                            <div
+                                                key={order.id}
                                                 className={`border border-white/10 bg-white/2 transition-all duration-300 ${isExpanded ? 'bg-white/5' : 'hover:bg-white/5 cursor-pointer'}`}
                                                 onClick={() => !isExpanded && setExpandedOrderId(order.id)}
                                             >
@@ -454,7 +454,7 @@ export default function AccountPage() {
                                                                 return (
                                                                     <div key={idx} className="w-16 h-20 bg-neutral-900 border border-white/10 relative overflow-hidden shrink-0 shadow-2xl">
                                                                         {imgUrl ? (
-                                                                            <img src={imgUrl} alt={item.product_name} className="w-full h-full object-cover grayscale opacity-80" />
+                                                                            <img src={imgUrl} alt={item.product_name} className="w-full h-full object-cover opacity-80" />
                                                                         ) : (
                                                                             <div className="w-full h-full flex items-center justify-center text-[8px] font-black text-white/10 uppercase">N/A</div>
                                                                         )}
@@ -474,11 +474,10 @@ export default function AccountPage() {
                                                                 {order.order_items?.map((item: any) => item.product_name).join(', ')}
                                                             </h4>
                                                             <div className="flex items-center gap-4">
-                                                                <span className={`px-2 py-0.5 text-[8px] font-black tracking-[0.2em] uppercase ${
-                                                                    order.status === 'completed' ? 'bg-green-500/10 text-green-500' :
-                                                                    order.status === 'pending' ? 'bg-white/10 text-white' :
-                                                                    'bg-white/5 text-white/30'
-                                                                }`}>
+                                                                <span className={`px-2 py-0.5 text-[8px] font-black tracking-[0.2em] uppercase ${order.status === 'completed' ? 'bg-green-500/10 text-green-500' :
+                                                                        order.status === 'pending' ? 'bg-white/10 text-white' :
+                                                                            'bg-white/5 text-white/30'
+                                                                    }`}>
                                                                     {order.status}
                                                                 </span>
                                                                 <span className="text-[9px] font-bold text-white/30 uppercase tracking-[0.2em]">
@@ -534,7 +533,7 @@ export default function AccountPage() {
                                                         </div>
 
                                                         <div className="mt-8 flex justify-end">
-                                                            <button 
+                                                            <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     setExpandedOrderId(null);
@@ -574,9 +573,9 @@ export default function AccountPage() {
                                         const gallery = product.product_images?.sort((a: any, b: any) => a.position - b.position) || [];
                                         const sizes = Array.from(new Set(product.product_variants?.map((v: any) => v.size) || [])) as string[];
                                         const displayPrice = product.product_variants?.[0]?.price ? `₹${product.product_variants[0].price}` : 'TBA';
-                                        
+
                                         return (
-                                            <ProductCard 
+                                            <ProductCard
                                                 key={product.id}
                                                 id={product.id}
                                                 name={product.name}

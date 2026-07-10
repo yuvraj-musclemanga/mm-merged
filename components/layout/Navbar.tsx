@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-
+import { usePathname, useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 
@@ -15,10 +15,22 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartOpen, onMobileMenuOpen, on
     const { cartCount } = useCart();
     const { user, logout } = useAuth();
     const [mounted, setMounted] = useState(false);
+    const pathname = usePathname();
+    const router = useRouter();
 
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    const handleStoryClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        if (pathname === '/') {
+            e.preventDefault();
+            const element = document.getElementById('our-story');
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    };
 
     return (
         <header className="sticky top-0 z-50 bg-black/95 backdrop-blur-sm border-b border-white/10 px-6 lg:px-12 py-6 shrink-0">
@@ -46,7 +58,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onCartOpen, onMobileMenuOpen, on
                     {/* Desktop Links - Visible only on lg+ */}
                     <div className="hidden lg:flex items-center gap-10 ml-8">
                         <Link href="/explore" className="text-xs font-bold uppercase tracking-widest hover:text-white/60 transition-colors">Shop</Link>
-                        <Link href="/about" className="text-xs font-bold uppercase tracking-widest hover:text-white/60 transition-colors">Our Story</Link>
+                        <Link href="/#our-story" onClick={handleStoryClick} className="text-xs font-bold uppercase tracking-widest hover:text-white/60 transition-colors">Our Story</Link>
                     </div>
                 </div>
 

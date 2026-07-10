@@ -34,7 +34,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                             items.map((item, index) => (
                                 <div key={`${item.id}-${item.size}-${index}`} className="flex gap-6 items-start">
                                     <div className="w-24 aspect-3/4 bg-card-dark border border-white/10 overflow-hidden shrink-0">
-                                        <div className="w-full h-full bg-cover bg-center grayscale" style={{ backgroundImage: `url("${item.image}")` }}></div>
+                                        <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url("${item.image}")` }}></div>
                                     </div>
                                     <div className="grow flex flex-col h-full">
                                         <div className="flex justify-between items-start mb-2">

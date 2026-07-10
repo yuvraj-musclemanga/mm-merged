@@ -69,9 +69,9 @@ export async function POST(req: NextRequest) {
             const { data: cp } = await supabaseAdmin
                 .from('coupons')
                 .select('*')
-                .eq('code', couponCode.trim())
+                .ilike('code', couponCode.trim())
                 .eq('is_active', true)
-                .single();
+                .maybeSingle();
             
             if (cp) {
                 // Determine if valid based on activation_date if it's username type
