@@ -74,6 +74,7 @@ export default function ExplorePage() {
                 categories${categoryFilter !== "All" ? "!inner" : ""}(name),
                 collections${collectionFilter !== "All" ? "!inner" : ""}(name),
                 product_variants(
+                    id,
                     sku,
                     price,
                     size,

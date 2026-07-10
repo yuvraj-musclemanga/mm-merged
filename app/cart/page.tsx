@@ -492,6 +492,31 @@ export default function CartPage() {
                 isOpen={isPaymentSuccessModalOpen} 
                 orderId={successOrderId} 
             />
+
+            {/* Full-screen Payment Processing Overlay */}
+            {isProcessingPayment && (
+                <div className="fixed inset-0 z-100 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md p-6 text-center select-none cursor-wait">
+                    {/* Inline CSS to disable scroll when overlay is active */}
+                    <style jsx global>{`
+                        html, body {
+                            overflow: hidden !important;
+                            touch-action: none !important;
+                        }
+                    `}</style>
+                    <div className="animate-spin size-12 border-4 border-white/20 border-t-white rounded-full mb-8"></div>
+                    <H2 className="text-xl md:text-2xl mb-4 tracking-[0.2em] uppercase font-bold text-white">
+                        Processing Secure Payment
+                    </H2>
+                    <div className="h-1 w-20 bg-white mb-6"></div>
+                    <p className="text-xs md:text-sm font-black uppercase tracking-[0.15em] text-red-500 max-w-md leading-relaxed animate-pulse">
+                        ⚠️ DO NOT PRESS THE BACK BUTTON, REFRESH THE PAGE, OR CLOSE THE BROWSER.
+                    </p>
+                    <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/40 mt-4 max-w-sm">
+                        Securing your transaction with Razorpay. This might take a few moments.
+                    </p>
+                </div>
+            )}
         </main>
     );
 }
+

@@ -14,6 +14,7 @@
  */
 
 import Image from "next/image";
+import Link from "next/link";
 
 const SEQUENCES = [
   {
@@ -23,6 +24,7 @@ const SEQUENCES = [
     leftCard: "240 GSM FRENCH TERRY COTTON FABRIC",
     rightCard: "SUPERIOR PRINT QUALITY",
     bottomCard: "LUXURY IN EVERY FIBER",
+    productId: "49121966-277f-4a9f-9570-917aaed467e3"
   },
   {
     image: "/pictures/goku.jpg",
@@ -31,6 +33,7 @@ const SEQUENCES = [
     leftCard: "PREMIUM EMBROIDERY WORK",
     rightCard: "SKIN FRIENDLY SOFT TOUCH FABRIC",
     bottomCard: "ELEVATED COMFORT",
+    productId: "d2459881-2351-4820-9ff2-e8d79078c620"
   },
   {
     image: "/pictures/zenitsu.jpg",
@@ -39,6 +42,7 @@ const SEQUENCES = [
     leftCard: "ORIGINAL EXCLUSIVE DESIGNS",
     rightCard: "LIMITED DROPS ONLY",
     bottomCard: "LIMITLESS POSSIBILITIES",
+    productId: "ec9daecd-9cc5-4ac5-b40b-8c89b32e4d2f"
   },
   {
     image: "/pictures/skinny_bitch1.jpg",
@@ -47,6 +51,7 @@ const SEQUENCES = [
     leftCard: "PREMIUM PUFF PRINT",
     rightCard: "BOXY FIT OVERSIZED",
     bottomCard: "BOLD DEMEANOUR",
+    productId: "63815de1-dbfa-472f-9101-1cd3469538c0"
   },
 ] as const;
 
@@ -88,9 +93,12 @@ export default function AnimatedSequencesSection() {
               <p className="text-white/60 tracking-widest text-sm md:text-base font-medium mb-8">
                 UNISEX OVERSIZED TEE
               </p>
-              <button className="px-8 py-3.5 bg-white/5 hover:bg-white text-white hover:text-black border border-white/20 hover:border-white transition-all duration-300 rounded-full tracking-widest text-xs lg:text-sm font-semibold backdrop-blur-md shadow-lg hover:shadow-white/20 cursor-pointer pointer-events-auto">
+              <Link 
+                href={`/product/${seq.productId}`}
+                className="px-8 py-3.5 bg-white/5 hover:bg-white text-white hover:text-black border border-white/20 hover:border-white transition-all duration-300 rounded-full tracking-widest text-xs lg:text-sm font-semibold backdrop-blur-md shadow-lg hover:shadow-white/20 cursor-pointer pointer-events-auto text-center"
+              >
                 VIEW PRODUCT
-              </button>
+              </Link>
             </div>
 
             {/* RIGHT — Feature Cards */}
@@ -125,9 +133,12 @@ export default function AnimatedSequencesSection() {
               >
                 {seq.topHeading}
               </h2>
-              <button className="px-6 py-2.5 bg-white/5 hover:bg-white text-white hover:text-black border border-white/20 hover:border-white transition-all duration-300 rounded-full tracking-widest text-[10px] md:text-xs font-semibold backdrop-blur-md shadow-lg hover:shadow-white/20 cursor-pointer pointer-events-auto">
+              <Link 
+                href={`/product/${seq.productId}`}
+                className="px-6 py-2.5 bg-white/5 hover:bg-white text-white hover:text-black border border-white/20 hover:border-white transition-all duration-300 rounded-full tracking-widest text-[10px] md:text-xs font-semibold backdrop-blur-md shadow-lg hover:shadow-white/20 cursor-pointer pointer-events-auto text-center"
+              >
                 VIEW PRODUCT
-              </button>
+              </Link>
             </div>
 
             {/* BOTTOM — Horizontal Feature Cards */}
