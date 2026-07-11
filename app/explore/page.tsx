@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { ProductCard } from "@/components/features/ProductCard";
 import { H1, H3 } from "@/components/ui/Typography";
@@ -39,7 +39,6 @@ export default function ExplorePage() {
     const fetchGenerationRef = useRef(0);
 
     useEffect(() => {
-        fetchMetadata();
         fetchProducts();
     }, [categoryFilter, collectionFilter, sizeFilter, colorFilter, dropFilter, sortBy]);
 
@@ -55,10 +54,18 @@ export default function ExplorePage() {
     const totalPages = Math.ceil(products.length / rowsPerPage);
 
     async function fetchMetadata() {
-        const { data: cats } = await supabase.from('categories').select('name');
-        const { data: colls } = await supabase.from('collections').select('name');
-        const { data: vColors } = await supabase.from('product_variants').select('color');
-        const { data: prodDrops } = await supabase.from('products').select('drop');
+        // These values do not depend on the selected filters. Loading them on
+        // every filter change caused four extra database requests per change.
+        const [catsResult, collsResult, colorsResult, dropsResult] = await Promise.all([
+            supabase.from('categories').select('name'),
+            supabase.from('collections').select('name'),
+            supabase.from('product_variants').select('color'),
+            supabase.from('products').select('drop'),
+        ]);
+        const { data: cats } = catsResult;
+        const { data: colls } = collsResult;
+        const { data: vColors } = colorsResult;
+        const { data: prodDrops } = dropsResult;
 
         if (cats) setCategories(["All", ...cats.map(c => c.name)]);
         if (colls) setCollections(["All", ...colls.map(c => c.name)]);
@@ -71,6 +78,10 @@ export default function ExplorePage() {
             setDrops(["All", ...uniqueDrops]);
         }
     }
+
+    useEffect(() => {
+        void fetchMetadata();
+    }, []);
 
     async function fetchProducts(attempt = 1) {
         // ── Abort any in-flight request ──────────────────────────────────
@@ -109,19 +120,11 @@ export default function ExplorePage() {
             if (dropFilter !== "All") query = query.eq('drop', dropFilter);
             if (sortBy === "newest") query = query.order('created_at', { ascending: false });
 
-            // Race the Supabase query against an 8-second timeout.
-            // Promise.race is more universally reliable than abortSignal.
-            const timeoutPromise = new Promise<never>((_, reject) =>
-                setTimeout(() => {
-                    controller.abort();
-                    reject(new Error('Request timed out'));
-                }, 8000)
-            );
-
-            const { data, error } = await Promise.race([
-                query.then((res: any) => res),
-                timeoutPromise,
-            ]);
+            // Abort the actual Supabase request, not just the UI promise.
+            // The shared client timeout is a second line of defence.
+            const timeout = setTimeout(() => controller.abort(), 8_000);
+            const { data, error } = await query.abortSignal(controller.signal);
+            clearTimeout(timeout);
 
             // A newer request has started — discard these results.
             if (myGeneration !== fetchGenerationRef.current) return;
