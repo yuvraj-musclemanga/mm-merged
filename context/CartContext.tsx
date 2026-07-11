@@ -53,28 +53,36 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // Not authenticated, use LocalStorage exclusively
                 setItems(lsItems);
             } else {
-                // Authenticated, fetch from DB
-                const { items: dbItems, cartId: dbCartId } = await getDBCartItems(user.uid);
-                setCartId(dbCartId);
+                try {
+                    // Authenticated, fetch from DB
+                    const { items: dbItems, cartId: dbCartId } = await getDBCartItems(user.uid);
+                    setCartId(dbCartId);
 
-                if (lsItems.length > 0) {
-                    if (dbItems.length > 0) {
-                        // Conflict! Need user input
-                        setGuestItemsCache(lsItems);
-                        setItems(dbItems); // Default to showing DB items while resolving
-                        setShowConflictModal(true);
-                    } else {
-                        // DB empty, LS full -> Migrate cleanly
-                        setItems(lsItems);
-                        if (dbCartId) {
-                            await syncDBCartItems(dbCartId, lsItems);
+                    if (lsItems.length > 0) {
+                        if (dbItems.length > 0) {
+                            // Conflict! Need user input
+                            setGuestItemsCache(lsItems);
+                            setItems(dbItems); // Default to showing DB items while resolving
+                            setShowConflictModal(true);
+                        } else {
+                            // DB empty, LS full -> Migrate cleanly
+                            setItems(lsItems);
+                            if (dbCartId) {
+                                await syncDBCartItems(dbCartId, lsItems);
+                            }
+                            localStorage.removeItem('guest_cart');
+                            localStorage.removeItem('cart');
                         }
-                        localStorage.removeItem('guest_cart');
-                        localStorage.removeItem('cart');
+                    } else {
+                        // No LS cart, just DB cart
+                        setItems(dbItems);
                     }
-                } else {
-                    // No LS cart, just DB cart
-                    setItems(dbItems);
+                } catch (error) {
+                    // Keep the customer able to browse and retain their guest cart
+                    // when the database is unavailable rather than leaving the UI stale.
+                    console.error('Unable to load database cart:', error);
+                    setItems(lsItems);
+                    setCartId(null);
                 }
             }
         };

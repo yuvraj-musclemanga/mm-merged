@@ -1,38 +1,9 @@
-import React from 'react';
 import { Button } from '@/components/ui/Button';
-import Link from 'next/link';
-import { H1, H2, Label } from '@/components/ui/Typography';
-import { ProductCard } from '@/components/features/ProductCard';
+import { H1, Label } from '@/components/ui/Typography';
 import AnimatedSequencesSection from '@/components/animations/AnimatedSequencesSection';
-import { ConditionalMarquee } from '@/components/ui/ConditionalMarquee';
 import { Marquee } from '@/components/ui/Marquee';
-import { supabase } from '@/lib/supabase';
 
 export default async function Home() {
-  const { data: products, error } = await supabase
-    .from('products')
-    .select(`
-      id,
-      name,
-      description,
-      product_images(image_url),
-      product_variants(*)
-    `);
-
-  if (error) {
-    console.error('Error fetching products:', error);
-  }
-
-  const displayProducts = (products || []).map((p: any) => ({
-    id: p.id,
-    name: p.name,
-    description: p.description,
-    image: p.product_images?.[0]?.image_url || '',
-    price: p.product_variants?.[0]?.price ? `₹${p.product_variants[0].price}` : 'TBA',
-    sizes: Array.from(new Set(p.product_variants?.map((v: any) => v.size) || [])) as string[],
-    variants: p.product_variants || []
-  }));
-
   return (
     <main>
       {/* ... (Notice Banners) */}

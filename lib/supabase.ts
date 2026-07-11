@@ -7,7 +7,32 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Supabase credentials are missing. Check your .env.local file.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// A failed network request must not leave a page in a perpetual loading state.
+// Individual screens may pass their own AbortSignal; this wrapper honours it
+// while enforcing a sensible upper bound for every Supabase browser request.
+const fetchWithTimeout: typeof fetch = async (input, init = {}) => {
+  const controller = new AbortController();
+  const externalSignal = init.signal;
+  const abortFromCaller = () => controller.abort();
+
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort();
+    else externalSignal.addEventListener('abort', abortFromCaller, { once: true });
+  }
+
+  const timeout = setTimeout(() => controller.abort(), 12_000);
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+    externalSignal?.removeEventListener('abort', abortFromCaller);
+  }
+};
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  global: { fetch: fetchWithTimeout },
+});
 
 export const updateUserProfile = async (userId: string, updates: { username?: string; phone?: string; full_name?: string }) => {
   const { data, error } = await supabase

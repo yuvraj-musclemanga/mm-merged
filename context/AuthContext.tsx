@@ -31,23 +31,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const checkConnection = async () => {
+        const fetchSession = async () => {
             try {
-                const { error } = await supabase.from('users').select('id').limit(1);
-                if (error && error.message.includes('fetch')) {
-                    throw new Error("Supabase Fetch Error");
-                }
-            } catch (err) {
-                console.error("SUPABASE CONNECTION ERROR: The app cannot reach your database. This is often caused by ad-blockers (uBlock, etc.) or your Supabase project being paused. Check your browser console for details.");
+                const { data: { session } } = await supabase.auth.getSession();
+                await handleSession(session);
+            } catch (error) {
+                // A timed-out auth request must not block the entire app shell.
+                console.error("Unable to restore Supabase session:", error);
+                setUser(null);
+                setLoading(false);
             }
         };
-
-        const fetchSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            await handleSession(session);
-        };
         
-        checkConnection();
         fetchSession();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
