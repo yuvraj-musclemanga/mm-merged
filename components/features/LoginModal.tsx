@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { H2 } from '@/components/ui/Typography';
-import { supabase } from '@/lib/supabase';
+import { supabase, withSupabaseTimeout } from '@/lib/supabase';
 
 import { Portal } from '@/components/ui/Portal';
 
@@ -80,7 +80,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
         setEmailStatus('checking');
         const delayDebounceFn = setTimeout(async () => {
             try {
-                const { data, error } = await supabase.from('users').select('email').eq('email', email);
+                const { data, error } = await withSupabaseTimeout(
+                    'Checking email availability',
+                    supabase.from('users').select('email').eq('email', email),
+                    8_000,
+                );
                 if (!error && data && data.length > 0) {
                     setEmailStatus('taken');
                 } else {
@@ -105,7 +109,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
         setUsernameStatus('checking');
         const delayDebounceFn = setTimeout(async () => {
             try {
-                const { data, error } = await supabase.from('users').select('username').eq('username', username);
+                const { data, error } = await withSupabaseTimeout(
+                    'Checking username availability',
+                    supabase.from('users').select('username').eq('username', username),
+                    8_000,
+                );
                 if (!error && data && data.length > 0) {
                     setUsernameStatus('taken');
                 } else {
@@ -135,11 +143,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
             }
 
             if (!identifier.includes('@')) {
-                const { data, error: lookupError } = await supabase
-                    .from('users')
-                    .select('email')
-                    .eq('username', identifier)
-                    .single();
+                const { data, error: lookupError } = await withSupabaseTimeout(
+                    'Looking up your account',
+                    supabase
+                        .from('users')
+                        .select('email')
+                        .eq('username', identifier)
+                        .single(),
+                );
                 
                 if (lookupError || !data) {
                     throw new Error('Member ID (Username) not found. Please check your credentials or register.');
@@ -147,10 +158,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                 loginEmail = data.email;
             }
 
-            const { error: signInError } = await supabase.auth.signInWithPassword({
-                email: loginEmail,
-                password: password,
-            });
+            const { error: signInError } = await withSupabaseTimeout(
+                'Signing in',
+                supabase.auth.signInWithPassword({ email: loginEmail, password }),
+            );
 
             if (signInError) {
                 // Handle common Supabase Auth errors
@@ -206,16 +217,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
         try {
             // Create Supabase Auth user and pass extra info into metadata
-            const { data, error: signUpError } = await supabase.auth.signUp({
-                email,
-                password: registerPassword,
-                options: {
-                    data: {
-                        username: username,
-                        phone: `${countryCode}${phone}`,
+            const { data, error: signUpError } = await withSupabaseTimeout(
+                'Creating your account',
+                supabase.auth.signUp({
+                    email,
+                    password: registerPassword,
+                    options: {
+                        data: {
+                            username: username,
+                            phone: `${countryCode}${phone}`,
+                        }
                     }
-                }
-            });
+                }),
+            );
 
             if (signUpError) throw signUpError;
             
@@ -450,4 +464,3 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
         </Portal>
     );
 };
-

@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, updateUserProfile, verifyAndChangePassword } from '@/lib/supabase';
+import { supabase, updateUserProfile, verifyAndChangePassword, withSupabaseTimeout } from '@/lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
 interface UserProfile {
@@ -31,10 +31,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let isActive = true;
+
         const fetchSession = async () => {
             try {
-                const { data: { session } } = await supabase.auth.getSession();
-                await handleSession(session);
+                const { data: { session } } = await withSupabaseTimeout(
+                    'Restoring your session',
+                    supabase.auth.getSession(),
+                );
+                if (isActive) await handleSession(session);
             } catch (error) {
                 // A timed-out auth request must not block the entire app shell.
                 console.error("Unable to restore Supabase session:", error);
@@ -45,11 +50,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         fetchSession();
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            await handleSession(session);
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            // Never await another Supabase call from this callback. The SDK can
+            // hold its auth lock while dispatching this event, which otherwise
+            // causes session refreshes and subsequent API calls to deadlock.
+            setTimeout(() => {
+                if (isActive) void handleSession(session);
+            }, 0);
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            isActive = false;
+            subscription.unsubscribe();
+        };
     }, []);
 
     const handleSession = async (session: Session | null) => {
@@ -57,11 +70,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
                 console.log("Supabase Auth ID (Permanent):", session.user.id);
                 // Fetch additional user details from Supabase users table
-                const { data, error } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('id', session.user.id)
-                    .single();
+                const { data, error } = await withSupabaseTimeout(
+                    'Loading your profile',
+                    supabase
+                        .from('users')
+                        .select('*')
+                        .eq('id', session.user.id)
+                        .single(),
+                );
 
                 if (!error && data) {
                     console.log("Database Match Found:", data.id);
@@ -104,9 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(prev => prev ? { ...prev, ...updates } : null);
             
             // Also update Supabase Auth metadata for consistency
-            await supabase.auth.updateUser({
-                data: updates
-            });
+            await withSupabaseTimeout('Updating your account', supabase.auth.updateUser({ data: updates }));
 
             return { success: true };
         } catch (error) {
@@ -118,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const logout = async () => {
         setLoading(true);
         try {
-            await supabase.auth.signOut();
+            await withSupabaseTimeout('Signing out', supabase.auth.signOut());
         } catch (error) {
             console.error("Error signing out:", error);
         } finally {
