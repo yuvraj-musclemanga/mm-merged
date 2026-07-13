@@ -30,6 +30,34 @@ const fetchWithTimeout: typeof fetch = async (input, init = {}) => {
   }
 };
 
+export class SupabaseTimeoutError extends Error {
+  constructor(operation: string, timeoutMs: number) {
+    super(`${operation} timed out after ${Math.round(timeoutMs / 1000)} seconds.`);
+    this.name = 'SupabaseTimeoutError';
+  }
+}
+
+// `global.fetch` can abort REST/Auth HTTP calls, but it cannot protect callers
+// from a stalled browser auth lock or storage operation. Use this at UI
+// boundaries so a broken local session never leaves the application loading.
+export const withSupabaseTimeout = async <T>(
+  operation: string,
+  promise: PromiseLike<T>,
+  timeoutMs = 15_000,
+): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new SupabaseTimeoutError(operation, timeoutMs)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([Promise.resolve(promise), timeout]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+};
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   global: { fetch: fetchWithTimeout },
 });
