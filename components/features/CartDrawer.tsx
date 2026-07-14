@@ -75,7 +75,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                             Checkout
                         </Link>
                         <div className="text-center">
-                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40">Shipping within UK only</p>
+                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40">Shipping within India only</p>
                         </div>
                     </div>
                 </div>
