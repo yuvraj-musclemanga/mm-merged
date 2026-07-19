@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
                 discount,
                 shipping_fee: shippingFee,
                 total: finalTotal,
-                notes: activeCoupon ? `COUPON_APPLIED:${activeCoupon.code}` : '',
+                coupon_code: activeCoupon ? activeCoupon.code : null,
                 razorpay_order_id: razorpayOrder.id,
             })
             .select('id')
